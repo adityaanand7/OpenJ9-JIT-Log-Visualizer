@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JIT Log Visualizer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <nav class="sidebar">
+            <h3>Available Logs</h3>
+            <ul>
+                {% for base, file_info in files.items() %}
+                    <li class="{{ 'active' if base == current_file }}">
+                        <a href="{{ url_for('view_log', file_base=base) }}">{{ base }}</a>
+                    </li>
+                {% endfor %}
+            </ul>
+        </nav>
+        <main class="content">
+            {% if current_file %}
+                <h2>Displaying: {{ current_file }}</h2>
+                <div class="viewer-grid">
+                    <div class="panel" id="cfg-panel">
+                        <h3>Control Flow Graph (CFG)</h3>
+                        <div class="svg-container">
+                            {{ svg_data | safe }}
+                        </div>
+                    </div>
+                    <div class="panel" id="trees-panel">
+                        <h3>Trees</h3>
+                        <div class="code-container">
+                            {{ trees_html | safe }}
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="placeholder">
+                    <h1>Welcome to the JIT Log Visualizer</h1>
+                    <p>Select a log file from the navigation on the left to begin.</p>
+                </div>
+            {% endif %}
+        </main>
+    </div>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,93 @@
+<trees
+	title="Trees after coldBlockOutlining"
+	method="Main.foo()V"
+	hotness="cold">
+
+Trees after coldBlockOutlining: for Main.foo()V
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+n31n      BBStart <block_3> (freq 10000)                                                      [0x776c72a050d0] bci=[-1,0,14] rc=0 vc=10 vn=- li=- udi=- nc=0
+n35n      ificmpne --> block_2 BBStart at n1n ()                                              [0x776c72a05210] bci=[-1,0,14] rc=0 vc=10 vn=- li=- udi=- nc=2 flg=0x20
+n33n        iload  <count-for-recompile>[#364  Static] [flags 0x2000303 0x40 ]                [0x776c72a05170] bci=[-1,0,14] rc=1 vc=10 vn=- li=- udi=- nc=0
+n34n        iconst 1 (X!=0 X>=0 )                                                             [0x776c72a051c0] bci=[-1,0,14] rc=1 vc=10 vn=- li=- udi=- nc=0 flg=0x104
+n32n      BBEnd </block_3> =====                                                              [0x776c72a05120] bci=[-1,0,14] rc=0 vc=10 vn=- li=- udi=- nc=0
+
+n56n      BBStart <block_6> (freq 0)                                                          [0x776c72a80140] bci=[-1,0,14] rc=0 vc=0 vn=- li=- udi=- nc=0
+n55n      goto --> block_4 BBStart at n36n                                                    [0x776c72a800f0] bci=[-1,0,14] rc=0 vc=0 vn=- li=- udi=- nc=0
+n57n      BBEnd </block_6> =====                                                              [0x776c72a80190] bci=[-1,0,14] rc=0 vc=0 vn=- li=- udi=- nc=0
+
+n1n       BBStart <block_2> (freq 10000)                                                      [0x776c72a04770] bci=[-1,0,14] rc=0 vc=10 vn=- li=- udi=- nc=0
+n4n       istore  <auto slot 1>[#423  Auto] [flags 0x3 0x0 ]                                  [0x776c72a04860] bci=[-1,2,14] rc=0 vc=10 vn=- li=- udi=- nc=1
+n3n         iconst 10 (X!=0 X>=0 )                                                            [0x776c72a04810] bci=[-1,0,14] rc=1 vc=10 vn=- li=- udi=- nc=0 flg=0x104
+n6n       istore  <auto slot 2>[#424  Auto] [flags 0x3 0x0 ]                                  [0x776c72a04900] bci=[-1,5,15] rc=0 vc=10 vn=- li=- udi=- nc=1
+n5n         iconst 20 (X!=0 X>=0 )                                                            [0x776c72a048b0] bci=[-1,3,15] rc=1 vc=10 vn=- li=- udi=- nc=0 flg=0x104
+n9n       treetop                                                                             [0x776c72a049f0] bci=[-1,6,16] rc=0 vc=10 vn=- li=- udi=- nc=1
+n8n         new  jitNewObject[#92  helper Method] [flags 0x400 0x0 ]                          [0x776c72a049a0] bci=[-1,6,16] rc=3 vc=10 vn=- li=- udi=- nc=1
+n7n           loadaddr  Main[#425  Static] [flags 0x18307 0x0 ]                               [0x776c72a04950] bci=[-1,6,16] rc=1 vc=10 vn=- li=- udi=- nc=0
+n11n      NULLCHK on n8n [#32]                                                                [0x776c72a04a90] bci=[-1,10,16] rc=0 vc=10 vn=- li=- udi=- nc=1
+n10n        call  Main.<init>()V[#427  special Method] [flags 0x500 0x0 ]                     [0x776c72a04a40] bci=[-1,10,16] rc=1 vc=10 vn=- li=- udi=- nc=1
+n8n           ==>new
+n12n      astore  <auto slot 3>[#428  Auto] [flags 0x7 0x0 ]                                  [0x776c72a04ae0] bci=[-1,13,16] rc=0 vc=10 vn=- li=- udi=- nc=1
+n8n         ==>new
+n16n      treetop                                                                             [0x776c72a04c20] bci=[-1,15,17] rc=0 vc=10 vn=- li=- udi=- nc=1
+n15n        new  jitNewObject[#92  helper Method] [flags 0x400 0x0 ]                          [0x776c72a04bd0] bci=[-1,15,17] rc=4 vc=10 vn=- li=- udi=- nc=1
+n14n          loadaddr  Main[#425  Static] [flags 0x18307 0x0 ]                               [0x776c72a04b80] bci=[-1,15,17] rc=1 vc=10 vn=- li=- udi=- nc=0
+n18n      NULLCHK on n15n [#32]                                                               [0x776c72a04cc0] bci=[-1,19,17] rc=0 vc=10 vn=- li=- udi=- nc=1
+n17n        call  Main.<init>()V[#427  special Method] [flags 0x500 0x0 ]                     [0x776c72a04c70] bci=[-1,19,17] rc=1 vc=10 vn=- li=- udi=- nc=1
+n15n          ==>new
+n19n      possibleHeapificationAtStore  jitHeapifyStackObjectIfRequired[#144  helper Method] [flags 0x400 0x0 ]  [0x776c72a04d10] bci=[-1,22,17] rc=0 vc=10 vn=- li=- udi=- nc=2
+n15n        ==>new
+n13n        aload  <auto slot 3>[#428  Auto] [flags 0x7 0x0 ]                                 [0x776c72a04b30] bci=[-1,14,17] rc=3 vc=10 vn=- li=- udi=- nc=0
+n21n      NULLCHK on n13n [#32]                                                               [0x776c72a04db0] bci=[-1,22,17] rc=0 vc=10 vn=- li=- udi=- nc=1
+n20n        awrtbari  Main.f1 LMain;[#429  Shadow +8] [flags 0x607 0x0 ] ()                   [0x776c72a04d60] bci=[-1,22,17] rc=2 vc=10 vn=- li=- udi=- nc=3 flg=0x20
+n13n          ==>aload
+n15n          ==>new
+n13n          ==>aload
+n23n      compressedRefs                                                                      [0x776c72a04e50] bci=[-1,22,17] rc=0 vc=10 vn=- li=- udi=- nc=2
+n20n        ==>awrtbari
+n22n        lconst 0 (highWordZero X==0 X>=0 X<=0 )                                           [0x776c72a04e00] bci=[-1,22,17] rc=1 vc=10 vn=- li=- udi=- nc=0 flg=0x4302
+n27n      NULLCHK on n24n [#32]                                                               [0x776c72a04f90] bci=[-1,27,18] rc=0 vc=10 vn=- li=- udi=- nc=1
+n26n        istorei  Main.f2 I[#430  Shadow +12] [flags 0x603 0x0 ]                           [0x776c72a04f40] bci=[-1,27,18] rc=1 vc=10 vn=- li=- udi=- nc=2
+n24n          aload  <auto slot 3>[#428  Auto] [flags 0x7 0x0 ]                               [0x776c72a04ea0] bci=[-1,25,18] rc=1 vc=10 vn=- li=- udi=- nc=0
+n25n          iload  <auto slot 1>[#423  Auto] [flags 0x3 0x0 ]                               [0x776c72a04ef0] bci=[-1,26,18] rc=1 vc=10 vn=- li=- udi=- nc=0
+n29n      istore  <auto slot 1>[#423  Auto] [flags 0x3 0x0 ]                                  [0x776c72a05030] bci=[-1,31,19] rc=0 vc=10 vn=- li=- udi=- nc=1
+n28n        iload  <auto slot 2>[#424  Auto] [flags 0x3 0x0 ]                                 [0x776c72a04fe0] bci=[-1,30,19] rc=1 vc=10 vn=- li=- udi=- nc=0
+n30n      return                                                                              [0x776c72a05080] bci=[-1,32,20] rc=0 vc=10 vn=- li=- udi=- nc=0
+n2n       BBEnd </block_2> =====                                                              [0x776c72a047c0] bci=[-1,32,20] rc=0 vc=10 vn=- li=- udi=- nc=0
+
+n36n      BBStart <block_4> (freq 0) (cold)                                                   [0x776c72a05260] bci=[-1,0,14] rc=0 vc=10 vn=- li=- udi=- nc=0
+n41n      istore  <recompilation-counter>[#347  Static] [flags 0x1000303 0x40 ]               [0x776c72a053f0] bci=[-1,0,14] rc=0 vc=10 vn=- li=- udi=- nc=1
+n40n        iadd                                                                              [0x776c72a053a0] bci=[-1,0,14] rc=2 vc=10 vn=- li=- udi=- nc=2
+n39n          iload  <recompilation-counter>[#347  Static] [flags 0x1000303 0x40 ]            [0x776c72a05350] bci=[-1,0,14] rc=1 vc=10 vn=- li=- udi=- nc=0
+n38n          iconst -1 (X!=0 X<=0 )                                                          [0x776c72a05300] bci=[-1,0,14] rc=1 vc=10 vn=- li=- udi=- nc=0 flg=0x204
+n43n      ificmpgt --> block_2 BBStart at n1n ()                                              [0x776c72a05490] bci=[-1,0,14] rc=0 vc=10 vn=- li=- udi=- nc=2 flg=0x20
+n40n        ==>iadd
+n42n        iconst 0 (X==0 X>=0 X<=0 )                                                        [0x776c72a05440] bci=[-1,0,14] rc=1 vc=10 vn=- li=- udi=- nc=0 flg=0x302
+n37n      BBEnd </block_4> (cold) =====                                                       [0x776c72a052b0] bci=[-1,0,14] rc=0 vc=10 vn=- li=- udi=- nc=0
+
+n44n      BBStart <block_5> (freq 0) (cold)                                                   [0x776c72a054e0] bci=[-1,0,14] rc=0 vc=10 vn=- li=- udi=- nc=0
+n47n      istore  <recompilation-counter>[#347  Static] [flags 0x1000303 0x40 ]               [0x776c72a055d0] bci=[-1,0,14] rc=0 vc=10 vn=- li=- udi=- nc=1
+n46n        iconst 0x7fffffff (X!=0 X>=0 )                                                    [0x776c72a05580] bci=[-1,0,14] rc=1 vc=10 vn=- li=- udi=- nc=0 flg=0x104
+n49n      bstore  "(null)" <gcr-patch-point>[#365  Static] [flags 0xc00301 0x40 ]             [0x776c72a05670] bci=[-1,0,14] rc=0 vc=10 vn=- li=- udi=- nc=1
+n48n        bconst   2 (X!=0 X>=0 )                                                           [0x776c72a05620] bci=[-1,0,14] rc=1 vc=10 vn=- li=- udi=- nc=0 flg=0x104
+n54n      treetop                                                                             [0x776c72a800a0] bci=[-1,0,14] rc=0 vc=10 vn=- li=- udi=- nc=1
+n50n        icall  jitRetranslateCallerWithPreparation[#72  helper Method] [flags 0x400 0x0 ] ()  [0x776c72a056c0] bci=[-1,0,14] rc=1 vc=10 vn=- li=- udi=- nc=3 flg=0x20
+n51n          iconst 0x80000 (X!=0 X>=0 )                                                     [0x776c72a05710] bci=[-1,0,14] rc=1 vc=10 vn=- li=- udi=- nc=0 flg=0x104
+n52n          loadaddr  "(null)" <start-PC>[#367  Static] [flags 0x4800303 0x40 ]             [0x776c72a80000] bci=[-1,0,14] rc=1 vc=10 vn=- li=- udi=- nc=0
+n53n          loadaddr  <J9Method>[#368  Static] [flags 0x8000307 0x40 ]                      [0x776c72a80050] bci=[-1,0,14] rc=1 vc=10 vn=- li=- udi=- nc=0
+n58n      goto --> block_2 BBStart at n1n                                                     [0x776c72a801e0] bci=[-1,0,14] rc=0 vc=0 vn=- li=- udi=- nc=0
+n45n      BBEnd </block_5> (cold)                                                             [0x776c72a05530] bci=[-1,0,14] rc=0 vc=10 vn=- li=- udi=- nc=0
+
+index:       node global index
+bci=[x,y,z]: byte-code-info [callee-index, bytecode-index, line-number]
+rc:          reference count
+vc:          visit count
+vn:          value number
+li:          local index
+udi:         use/def index
+nc:          number of children
+addr:        address size in bytes
+flg:         node flags
+
+Number of nodes = 58, symRefCount = 431
+</trees>

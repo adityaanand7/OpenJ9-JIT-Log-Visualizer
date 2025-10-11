@@ -1,0 +1,152 @@
+<trees
+	title="Trees after localDeadStoreElimination"
+	method="Main.foo()V"
+	hotness="cold">
+
+Trees after localDeadStoreElimination: for Main.foo()V
+
+Call Stack Info
+CalleeIndex CallerIndex ByteCodeIndex CalleeMethod
+       0         -1          10       Main.<init>()V
+       1          0           1       java/lang/Object.<init>()V
+       2         -1          19       Main.<init>()V
+       3          2           1       java/lang/Object.<init>()V
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+n31n      BBStart <block_3> (freq 10000)                                                      [0x776c72a050d0] bci=[-1,0,14] rc=0 vc=159 vn=- li=- udi=- nc=0
+n35n      ificmpeq --> block_4 BBStart at n36n ()                                             [0x776c72a05210] bci=[-1,0,14] rc=0 vc=159 vn=- li=- udi=- nc=2 flg=0x20
+n33n        iload  <count-for-recompile>[#364  Static] [flags 0x2000303 0x40 ] (cannotOverflow )  [0x776c72a05170] bci=[-1,0,14] rc=1 vc=159 vn=- li=1 udi=- nc=0 flg=0x1000
+n34n        iconst 1 (X!=0 X>=0 )                                                             [0x776c72a051c0] bci=[-1,0,14] rc=1 vc=159 vn=- li=1 udi=- nc=0 flg=0x104
+n32n      BBEnd </block_3> =====                                                              [0x776c72a05120] bci=[-1,0,14] rc=0 vc=159 vn=- li=- udi=- nc=0
+
+n1n       BBStart <block_2> (freq 5002)                                                       [0x776c72a04770] bci=[-1,0,14] rc=0 vc=159 vn=- li=- udi=- nc=0
+n4n       istore  <auto slot 1>[#423  Auto] [flags 0x3 0x0 ]                                  [0x776c72a04860] bci=[-1,2,14] rc=0 vc=159 vn=- li=- udi=- nc=1
+n3n         iconst 10 (X!=0 X>=0 )                                                            [0x776c72a04810] bci=[-1,0,14] rc=1 vc=159 vn=- li=1 udi=- nc=0 flg=0x104
+n6n       istore  <auto slot 2>[#424  Auto] [flags 0x3 0x0 ]                                  [0x776c72a04900] bci=[-1,5,15] rc=0 vc=159 vn=- li=- udi=- nc=1
+n5n         iconst 20 (X!=0 X>=0 )                                                            [0x776c72a048b0] bci=[-1,3,15] rc=1 vc=159 vn=- li=1 udi=- nc=0 flg=0x104
+n9n       treetop                                                                             [0x776c72a049f0] bci=[-1,6,16] rc=0 vc=159 vn=- li=- udi=- nc=1
+n8n         new  jitNewObject[#92  helper Method] [flags 0x400 0x0 ] (highWordZero Unsigned X!=0 allocationCanBeRemoved )  [0x776c72a049a0] bci=[-1,6,16] rc=3 vc=159 vn=- li=1 udi=- nc=1 flg=0x4004
+n7n           loadaddr  Main[#425  Static] [flags 0x18307 0x0 ]                               [0x776c72a04950] bci=[-1,6,16] rc=1 vc=159 vn=- li=1 udi=- nc=0
+n120n     astore  <temp slot 5>[#437  Auto] [flags 0x7 0x0 ] (X!=0 )                          [0x776c72a81540] bci=[-1,6,16] rc=0 vc=159 vn=- li=- udi=- nc=1 flg=0x4
+n8n         ==>new
+n101n     astore  <temp slot 2>[#435  Auto] [flags 0x20000007 0x0 ] (X!=0 privatizedInlinerArg )  [0x776c72a80f50] bci=[-1,6,16] rc=0 vc=159 vn=- li=- udi=- nc=1 flg=0x2004
+n8n         ==>new
+n113n     ificmpne --> block_16 BBStart at n109n (HCRGuard/NonoverriddenTest )                [0x776c72a81310] bci=[0,0,1] rc=0 vc=159 vn=- li=- udi=- nc=2 flg=0x1020
+n111n       iload  unknown static[#436  Static] [flags 0x10303 0x0 ] (cannotOverflow )        [0x776c72a81270] bci=[-1,10,16] rc=1 vc=159 vn=- li=1 udi=- nc=0 flg=0x1000
+n112n       iconst 0 (X==0 X>=0 X<=0 )                                                        [0x776c72a812c0] bci=[-1,10,16] rc=2 vc=159 vn=- li=1 udi=- nc=0 flg=0x302
+n106n     BBEnd </block_2>                                                                    [0x776c72a810e0] bci=[0,0,1] rc=0 vc=159 vn=- li=- udi=- nc=0
+n105n     BBStart <block_14> (freq 5002) (extension of previous block)                        [0x776c72a81090] bci=[0,0,1] rc=0 vc=159 vn=- li=- udi=- nc=0
+n97n      ificmpne --> block_8 BBStart at n93n (HCRGuard/NonoverriddenTest )                  [0x776c72a80e10] bci=[1,0,37] rc=0 vc=159 vn=- li=- udi=- nc=2 flg=0x1020
+n95n        iload  unknown static[#434  Static] [flags 0x10303 0x0 ] (cannotOverflow )        [0x776c72a80d70] bci=[0,1,1] rc=1 vc=159 vn=- li=1 udi=- nc=0 flg=0x1000
+n112n       ==>iconst 0
+n90n      BBEnd </block_14> =====                                                             [0x776c72a80be0] bci=[1,0,37] rc=0 vc=159 vn=- li=- udi=- nc=0
+
+n89n      BBStart <block_10> (freq 6002)                                                      [0x776c72a80b90] bci=[-1,10,16] rc=0 vc=159 vn=- li=- udi=- nc=0
+n12n      astore  <auto slot 3>[#428  Auto] [flags 0x7 0x0 ]                                  [0x776c72a04ae0] bci=[-1,13,16] rc=0 vc=159 vn=- li=- udi=- nc=1
+n121n       aload  <temp slot 5>[#437  Auto] [flags 0x7 0x0 ]                                 [0x776c72a81590] bci=[-1,6,16] rc=1 vc=159 vn=- li=1 udi=- nc=0
+n16n      treetop                                                                             [0x776c72a04c20] bci=[-1,15,17] rc=0 vc=159 vn=- li=- udi=- nc=1
+n15n        new  jitNewObject[#92  helper Method] [flags 0x400 0x0 ] (highWordZero Unsigned X!=0 allocationCanBeRemoved )  [0x776c72a04bd0] bci=[-1,15,17] rc=3 vc=159 vn=- li=1 udi=- nc=1 flg=0x4004
+n14n          loadaddr  Main[#425  Static] [flags 0x18307 0x0 ]                               [0x776c72a04b80] bci=[-1,15,17] rc=1 vc=159 vn=- li=1 udi=- nc=0
+n183n     astore  <temp slot 6>[#440  Auto] [flags 0x7 0x0 ] (X!=0 )                          [0x776c72a828f0] bci=[-1,15,17] rc=0 vc=159 vn=- li=- udi=- nc=1 flg=0x4
+n15n        ==>new
+n164n     astore  <temp slot 2>[#435  Auto] [flags 0x20000007 0x0 ] (X!=0 privatizedInlinerArg )  [0x776c72a82300] bci=[-1,15,17] rc=0 vc=159 vn=- li=- udi=- nc=1 flg=0x2004
+n15n        ==>new
+n176n     ificmpne --> block_26 BBStart at n172n (HCRGuard/NonoverriddenTest )                [0x776c72a826c0] bci=[2,0,1] rc=0 vc=159 vn=- li=- udi=- nc=2 flg=0x1020
+n174n       iload  unknown static[#439  Static] [flags 0x10303 0x0 ] (cannotOverflow )        [0x776c72a82620] bci=[-1,19,17] rc=1 vc=159 vn=- li=1 udi=- nc=0 flg=0x1000
+n175n       iconst 0 (X==0 X>=0 X<=0 )                                                        [0x776c72a82670] bci=[-1,19,17] rc=2 vc=159 vn=- li=1 udi=- nc=0 flg=0x302
+n169n     BBEnd </block_10>                                                                   [0x776c72a82490] bci=[2,0,1] rc=0 vc=159 vn=- li=- udi=- nc=0
+n168n     BBStart <block_24> (freq 6002) (extension of previous block)                        [0x776c72a82440] bci=[2,0,1] rc=0 vc=159 vn=- li=- udi=- nc=0
+n160n     ificmpne --> block_18 BBStart at n156n (HCRGuard/NonoverriddenTest )                [0x776c72a821c0] bci=[3,0,37] rc=0 vc=159 vn=- li=- udi=- nc=2 flg=0x1020
+n158n       iload  unknown static[#438  Static] [flags 0x10303 0x0 ] (cannotOverflow )        [0x776c72a82120] bci=[2,1,1] rc=1 vc=159 vn=- li=1 udi=- nc=0 flg=0x1000
+n175n       ==>iconst 0
+n153n     BBEnd </block_24> =====                                                             [0x776c72a81f90] bci=[3,0,37] rc=0 vc=159 vn=- li=- udi=- nc=0
+
+n152n     BBStart <block_20> (freq 4003)                                                      [0x776c72a81f40] bci=[-1,19,17] rc=0 vc=159 vn=- li=- udi=- nc=0
+n19n      possibleHeapificationAtStore  jitHeapifyStackObjectIfRequired[#144  helper Method] [flags 0x400 0x0 ]  [0x776c72a04d10] bci=[-1,22,17] rc=0 vc=159 vn=- li=- udi=- nc=2
+n184n       aload  <temp slot 6>[#440  Auto] [flags 0x7 0x0 ]                                 [0x776c72a82940] bci=[-1,15,17] rc=2 vc=159 vn=- li=1 udi=- nc=0
+n13n        aload  <auto slot 3>[#428  Auto] [flags 0x7 0x0 ] (X>=0 )                         [0x776c72a04b30] bci=[-1,14,17] rc=4 vc=159 vn=- li=1 udi=- nc=0 flg=0x100
+n21n      NULLCHK on n13n [#32]                                                               [0x776c72a04db0] bci=[-1,22,17] rc=0 vc=159 vn=- li=- udi=- nc=1
+n20n        awrtbari  Main.f1 LMain;[#429  Shadow +8] [flags 0x607 0x0 ] ()                   [0x776c72a04d60] bci=[-1,22,17] rc=2 vc=159 vn=- li=1 udi=- nc=3 flg=0x20
+n13n          ==>aload
+n184n         ==>aload
+n13n          ==>aload
+n23n      compressedRefs                                                                      [0x776c72a04e50] bci=[-1,22,17] rc=0 vc=159 vn=- li=- udi=- nc=2
+n20n        ==>awrtbari
+n22n        lconst 0 (highWordZero X==0 X>=0 X<=0 )                                           [0x776c72a04e00] bci=[-1,22,17] rc=1 vc=159 vn=- li=1 udi=- nc=0 flg=0x4302
+n26n      istorei  Main.f2 I[#430  Shadow +12] [flags 0x603 0x0 ]                             [0x776c72a04f40] bci=[-1,27,18] rc=0 vc=159 vn=- li=- udi=- nc=2
+n13n        ==>aload
+n25n        iload  <auto slot 1>[#423  Auto] [flags 0x3 0x0 ] (cannotOverflow )               [0x776c72a04ef0] bci=[-1,26,18] rc=1 vc=159 vn=- li=1 udi=- nc=0 flg=0x1000
+n30n      return                                                                              [0x776c72a05080] bci=[-1,32,20] rc=0 vc=159 vn=- li=- udi=- nc=0
+n2n       BBEnd </block_20> =====                                                             [0x776c72a047c0] bci=[-1,32,20] rc=0 vc=159 vn=- li=- udi=- nc=0
+
+n93n      BBStart <block_8> (freq 1) (cold)                                                   [0x776c72a80cd0] bci=[-1,10,16] rc=0 vc=159 vn=- li=- udi=- nc=0
+n98n      treetop                                                                             [0x776c72a80e60] bci=[0,1,1] rc=0 vc=159 vn=- li=- udi=- nc=1
+n62n        call  java/lang/Object.<init>()V[#433  special Method] [flags 0x500 0x0 ] (virtualCallNodeForAGuardedInlinedCall )  [0x776c72a80320] bci=[0,1,1] rc=1 vc=159 vn=- li=1 udi=- nc=1 flg=0x800
+n100n         aload  <temp slot 2>[#435  Auto] [flags 0x20000007 0x0 ]                        [0x776c72a80f00] bci=[0,1,1] rc=1 vc=159 vn=- li=1 udi=- nc=0
+n211n     goto --> block_10 BBStart at n89n                                                   [0x776c72a831b0] bci=[0,1,1] rc=0 vc=159 vn=- li=- udi=- nc=0
+n210n     BBEnd </block_8> (cold) =====                                                       [0x776c72a83160] bci=[-1,10,16] rc=0 vc=159 vn=- li=- udi=- nc=0
+
+n109n     BBStart <block_16> (freq 1) (cold)                                                  [0x776c72a811d0] bci=[-1,10,16] rc=0 vc=159 vn=- li=- udi=- nc=0
+n114n     NULLCHK on n118n [#32]                                                              [0x776c72a81360] bci=[-1,10,16] rc=0 vc=159 vn=- li=- udi=- nc=1
+n10n        call  Main.<init>()V[#427  special Method] [flags 0x500 0x0 ] (virtualCallNodeForAGuardedInlinedCall )  [0x776c72a04a40] bci=[-1,10,16] rc=1 vc=159 vn=- li=1 udi=- nc=1 flg=0x800
+n118n         aload  <temp slot 2>[#435  Auto] [flags 0x20000007 0x0 ]                        [0x776c72a814a0] bci=[-1,10,16] rc=1 vc=159 vn=- li=1 udi=- nc=0
+n187n     astore  <auto slot 3>[#428  Auto] [flags 0x7 0x0 ]                                  [0x776c72a82a30] bci=[-1,13,16] rc=0 vc=159 vn=- li=- udi=- nc=1
+n188n       aload  <temp slot 5>[#437  Auto] [flags 0x7 0x0 ]                                 [0x776c72a82a80] bci=[-1,6,16] rc=1 vc=159 vn=- li=1 udi=- nc=0
+n189n     treetop                                                                             [0x776c72a82ad0] bci=[-1,15,17] rc=0 vc=159 vn=- li=- udi=- nc=1
+n190n       new  jitNewObject[#92  helper Method] [flags 0x400 0x0 ] (highWordZero Unsigned X!=0 allocationCanBeRemoved )  [0x776c72a82b20] bci=[-1,15,17] rc=3 vc=159 vn=- li=1 udi=- nc=1 flg=0x4004
+n191n         loadaddr  Main[#425  Static] [flags 0x18307 0x0 ]                               [0x776c72a82b70] bci=[-1,15,17] rc=1 vc=159 vn=- li=1 udi=- nc=0
+n192n     astore  <temp slot 6>[#440  Auto] [flags 0x7 0x0 ] (X!=0 )                          [0x776c72a82bc0] bci=[-1,15,17] rc=0 vc=159 vn=- li=- udi=- nc=1 flg=0x4
+n190n       ==>new
+n193n     astore  <temp slot 2>[#435  Auto] [flags 0x20000007 0x0 ] (X!=0 privatizedInlinerArg )  [0x776c72a82c10] bci=[-1,15,17] rc=0 vc=159 vn=- li=- udi=- nc=1 flg=0x2004
+n190n       ==>new
+n197n     BBEnd </block_16> (cold) =====                                                      [0x776c72a82d50] bci=[2,0,1] rc=0 vc=159 vn=- li=- udi=- nc=0
+
+n172n     BBStart <block_26> (freq 1) (cold)                                                  [0x776c72a82580] bci=[-1,19,17] rc=0 vc=159 vn=- li=- udi=- nc=0
+n177n     NULLCHK on n181n [#32]                                                              [0x776c72a82710] bci=[-1,19,17] rc=0 vc=159 vn=- li=- udi=- nc=1
+n17n        call  Main.<init>()V[#427  special Method] [flags 0x500 0x0 ] (virtualCallNodeForAGuardedInlinedCall )  [0x776c72a04c70] bci=[-1,19,17] rc=1 vc=159 vn=- li=1 udi=- nc=1 flg=0x800
+n181n         aload  <temp slot 2>[#435  Auto] [flags 0x20000007 0x0 ]                        [0x776c72a82850] bci=[-1,19,17] rc=1 vc=159 vn=- li=1 udi=- nc=0
+n178n     goto --> block_20 BBStart at n152n                                                  [0x776c72a82760] bci=[-1,19,17] rc=0 vc=159 vn=- li=- udi=- nc=0
+n173n     BBEnd </block_26> (cold) =====                                                      [0x776c72a825d0] bci=[-1,19,17] rc=0 vc=159 vn=- li=- udi=- nc=0
+
+n156n     BBStart <block_18> (freq 1) (cold)                                                  [0x776c72a82080] bci=[-1,19,17] rc=0 vc=159 vn=- li=- udi=- nc=0
+n161n     treetop                                                                             [0x776c72a82210] bci=[2,1,1] rc=0 vc=159 vn=- li=- udi=- nc=1
+n125n       call  java/lang/Object.<init>()V[#433  special Method] [flags 0x500 0x0 ] (virtualCallNodeForAGuardedInlinedCall )  [0x776c72a816d0] bci=[2,1,1] rc=1 vc=159 vn=- li=1 udi=- nc=1 flg=0x800
+n163n         aload  <temp slot 2>[#435  Auto] [flags 0x20000007 0x0 ]                        [0x776c72a822b0] bci=[2,1,1] rc=1 vc=159 vn=- li=1 udi=- nc=0
+n214n     goto --> block_20 BBStart at n152n                                                  [0x776c72a832a0] bci=[2,1,1] rc=0 vc=159 vn=- li=- udi=- nc=0
+n213n     BBEnd </block_18> (cold) =====                                                      [0x776c72a83250] bci=[-1,19,17] rc=0 vc=159 vn=- li=- udi=- nc=0
+
+n36n      BBStart <block_4> (freq 0) (cold)                                                   [0x776c72a05260] bci=[-1,0,14] rc=0 vc=159 vn=- li=- udi=- nc=0
+n41n      istore  <recompilation-counter>[#347  Static] [flags 0x1000303 0x40 ]               [0x776c72a053f0] bci=[-1,0,14] rc=0 vc=159 vn=- li=- udi=- nc=1
+n40n        iadd                                                                              [0x776c72a053a0] bci=[-1,0,14] rc=2 vc=159 vn=- li=1 udi=- nc=2
+n39n          iload  <recompilation-counter>[#347  Static] [flags 0x1000303 0x40 ] (cannotOverflow )  [0x776c72a05350] bci=[-1,0,14] rc=1 vc=159 vn=- li=1 udi=- nc=0 flg=0x1000
+n38n          iconst -1 (X!=0 X<=0 )                                                          [0x776c72a05300] bci=[-1,0,14] rc=1 vc=159 vn=- li=1 udi=- nc=0 flg=0x204
+n43n      ificmpgt --> block_2 BBStart at n1n ()                                              [0x776c72a05490] bci=[-1,0,14] rc=0 vc=159 vn=- li=- udi=- nc=2 flg=0x20
+n40n        ==>iadd
+n42n        iconst 0 (X==0 X>=0 X<=0 )                                                        [0x776c72a05440] bci=[-1,0,14] rc=1 vc=159 vn=- li=1 udi=- nc=0 flg=0x302
+n37n      BBEnd </block_4> (cold)                                                             [0x776c72a052b0] bci=[-1,0,14] rc=0 vc=159 vn=- li=- udi=- nc=0
+n44n      BBStart <block_5> (freq 0) (extension of previous block) (cold)                     [0x776c72a054e0] bci=[-1,0,14] rc=0 vc=159 vn=- li=- udi=- nc=0
+n47n      istore  <recompilation-counter>[#347  Static] [flags 0x1000303 0x40 ]               [0x776c72a055d0] bci=[-1,0,14] rc=0 vc=159 vn=- li=- udi=- nc=1
+n46n        iconst 0x7fffffff (X!=0 X>=0 )                                                    [0x776c72a05580] bci=[-1,0,14] rc=1 vc=159 vn=- li=1 udi=- nc=0 flg=0x104
+n49n      bstore  "(null)" <gcr-patch-point>[#365  Static] [flags 0xc00301 0x40 ]             [0x776c72a05670] bci=[-1,0,14] rc=0 vc=159 vn=- li=- udi=- nc=1
+n48n        bconst   2 (X!=0 X>=0 )                                                           [0x776c72a05620] bci=[-1,0,14] rc=1 vc=159 vn=- li=1 udi=- nc=0 flg=0x104
+n54n      treetop                                                                             [0x776c72a800a0] bci=[-1,0,14] rc=0 vc=159 vn=- li=- udi=- nc=1
+n50n        icall  jitRetranslateCallerWithPreparation[#72  helper Method] [flags 0x400 0x0 ] ()  [0x776c72a056c0] bci=[-1,0,14] rc=1 vc=159 vn=- li=1 udi=- nc=3 flg=0x20
+n51n          iconst 0x80000 (X!=0 X>=0 )                                                     [0x776c72a05710] bci=[-1,0,14] rc=1 vc=159 vn=- li=1 udi=- nc=0 flg=0x104
+n52n          loadaddr  "(null)" <start-PC>[#367  Static] [flags 0x4800303 0x40 ]             [0x776c72a80000] bci=[-1,0,14] rc=1 vc=159 vn=- li=1 udi=- nc=0
+n53n          loadaddr  <J9Method>[#368  Static] [flags 0x8000307 0x40 ]                      [0x776c72a80050] bci=[-1,0,14] rc=1 vc=159 vn=- li=1 udi=- nc=0
+n58n      goto --> block_2 BBStart at n1n                                                     [0x776c72a801e0] bci=[-1,0,14] rc=0 vc=159 vn=- li=- udi=- nc=0
+n45n      BBEnd </block_5> (cold)                                                             [0x776c72a05530] bci=[-1,0,14] rc=0 vc=159 vn=- li=- udi=- nc=0
+
+index:       node global index
+bci=[x,y,z]: byte-code-info [callee-index, bytecode-index, line-number]
+rc:          reference count
+vc:          visit count
+vn:          value number
+li:          local index
+udi:         use/def index
+nc:          number of children
+addr:        address size in bytes
+flg:         node flags
+
+Number of nodes = 101, symRefCount = 441
+</trees>
