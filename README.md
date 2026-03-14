@@ -104,6 +104,7 @@ The server starts at `http://localhost:5000` in debug mode.
 4. Click **Upload and Generate** — the extractor runs and populates the sidebar with all optimization passes.
 5. Click any pass in the sidebar to view its CFG and Tree IL side by side.
 
+Note: To generate log files use `-Xjit:traceFull,log=<log_name>` in your command line argument. 
 ### Interacting with the Viewer
 
 - **Click a CFG node** to highlight and scroll to the corresponding basic block in the Tree IL panel. The Basic Block Info table in the sidebar updates with metadata.
