@@ -37,8 +37,7 @@ log_viewer/
 │   └── home-icon.svg             # Navigation icon
 │
 ├── logs/                         # Generated per-pass log files (gitignored)
-├── uploads/                      # User-uploaded JIT dump files (gitignored)
-└── complete_log_file/            # Raw dump copies for the extractor (gitignored)
+└── uploads/                      # User-uploaded JIT dump files (gitignored)
 ```
 
 ## Prerequisites
