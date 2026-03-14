@@ -2,6 +2,7 @@ import re
 import sys
 import os
 
+# Legacy tree-only extractor kept for quick CLI checks.
 def extract_jit_trees(log_file_path, target_method):
     """
     Parses a JIT log file and extracts the content of all <trees>...</trees>
@@ -16,7 +17,7 @@ def extract_jit_trees(log_file_path, target_method):
     print(f"Target method: {target_method}")
 
     try:
-        # Read the entire log file content
+        # Load the full log once so regex scans are straightforward.
         with open(log_file_path, 'r', encoding='utf-8', errors='ignore') as f:
             log_content = f.read()
     except Exception as e:
@@ -28,7 +29,7 @@ def extract_jit_trees(log_file_path, target_method):
 
     found_trees = 0
 
-    # Iterate over all tree blocks found in the log
+    # Walk all tree blocks and keep only the requested method.
     for match in tree_block_pattern.finditer(log_content):
         trees_content_start = match.group(1).strip()
         full_trees_block = trees_content_start + '\n</trees>' 
@@ -46,8 +47,7 @@ def extract_jit_trees(log_file_path, target_method):
                 safe_title = re.sub(r'[-\s]+', '_', safe_title)
                 safe_method = re.sub(r'[^\w\s.]', '_', method).strip()
                 
-                # --- MODIFIED LINE ---
-                # Prepends the counter 'found_trees' to the filename.
+                # Prefix with a counter so files never overwrite each other.
                 output_filename = f"{found_trees}_{safe_method}_{safe_title}.log"
                 
                 try:

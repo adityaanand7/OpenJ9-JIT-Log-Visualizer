@@ -2,14 +2,14 @@ import re
 import sys
 import subprocess
 
+# Convert OpenJ9 CFG text dumps into clickable DOT/SVG.
 def parse_cfg_to_dot(cfg_content):
     """
     Robustly parses CFG log content by analyzing it block-by-block,
     ensuring all nodes with addresses are correctly identified and made clickable.
     """
     
-    # Split the log into chunks, one for each block definition.
-    # A block starts with a number, a space, and a bracketed hex address.
+    # Each chunk starts at a basic-block header like: "7 [0x....]".
     block_chunks = re.split(r'^\s*(?=\d+\s+\[0x)', cfg_content, flags=re.MULTILINE)
 
     nodes = {}
@@ -19,52 +19,89 @@ def parse_cfg_to_dot(cfg_content):
         if not chunk.strip():
             continue
 
-        # --- 1. Find the Node ID for this chunk ---
+        # Every chunk should begin with a numeric block id.
         id_match = re.search(r'^\s*(\d+)', chunk)
         if not id_match:
             continue
         node_id = id_match.group(1)
         
-        # --- 2. Check for a BBStart address to make it clickable ---
+        # If we have a BBStart address, use it to link CFG nodes to Tree IL blocks.
         address_match = re.search(r'BBStart at (0x[0-9a-f]+)', chunk)
         if address_match:
             address = address_match.group(1)
             nodes[node_id] = {'address': address, 'label': f"Block {node_id}"}
         else:
-            # --- 3. If no address, check if it's a special type like 'entry' or 'exit' ---
+            # Special nodes (entry/exit) do not have a BBStart address.
             type_match = re.search(r'\]\s*(entry|exit)', chunk)
             if type_match:
                 node_type = type_match.group(1)
                 nodes[node_id] = {'address': None, 'label': node_type}
             else:
-                # Fallback for any other kind of node
+                # Fallback for unknown node shapes.
                 nodes[node_id] = {'address': None, 'label': f"Node {node_id}"}
 
-        # --- 4. Find all outgoing edges for this block ---
+        # Pull outgoing edges from the "out=[...]" section.
         out_match = re.search(r'out\s*=\s*\[(.*?)\]', chunk, re.DOTALL)
         if out_match:
             edge_pattern = re.compile(r'(\d+)\(\d+\)')
             for edge_match in edge_pattern.finditer(out_match.group(1)):
                 edges.append((node_id, edge_match.group(1)))
 
-    # --- Generate DOT file content ---
-    dot_lines = ['digraph CFG {', '    rankdir="TB";', '    node [shape=box, style=rounded, fontname="sans-serif"];']
-    
+    # Build a DOT graph with colors tuned for readability in the UI.
+    dot_lines = [
+        'digraph CFG {',
+        '    rankdir="TB";',
+        '    splines=true;',
+        '    nodesep=0.6;',
+        '    ranksep=0.5;',
+        '    bgcolor="transparent";',
+        '    pad=0.3;',
+        '',
+        '    // Default node style',
+        '    node [shape=box, style="rounded,filled", fontname="Inter, Segoe UI, Roboto, sans-serif",',
+        '          fontsize=11, fillcolor="#f8fafc", color="#94a3b8", penwidth=1.5,',
+        '          margin="0.15,0.08"];',
+        '',
+        '    // Default edge style',
+        '    edge [color="#94a3b8", arrowsize=0.7, penwidth=1.2,',
+        '          fontname="Inter, Segoe UI, Roboto, sans-serif", fontsize=9];',
+    ]
+
     for node_id, data in nodes.items():
         label = data.get('label')
         address = data.get('address')
-        
+
         if address:
-            # Make clickable nodes
-            dot_lines.append(f'    "{node_id}" [label="{label}", id="svg-node-for-{address}", href="#"];')
+            # Regular block nodes.
+            dot_lines.append(
+                f'    "{node_id}" [label="{label}", id="svg-node-for-{address}", href="#",'
+                f' fillcolor="#eff6ff", color="#3b82f6", fontcolor="#1e3a5f"];'
+            )
         else:
-            # Non-clickable nodes (like 'entry' and 'exit')
-            dot_lines.append(f'    "{node_id}" [label="{label}", id="svg-node-special-{node_id}"];')
+            # Entry/exit nodes are styled separately so control flow is easier to scan.
+            node_label = label.lower() if label else ''
+            if node_label == 'entry':
+                dot_lines.append(
+                    f'    "{node_id}" [label="{label}", id="svg-node-special-{node_id}",'
+                    f' shape=oval, fillcolor="#ecfdf5", color="#10b981", fontcolor="#065f46",'
+                    f' style="filled", penwidth=2];'
+                )
+            elif node_label == 'exit':
+                dot_lines.append(
+                    f'    "{node_id}" [label="{label}", id="svg-node-special-{node_id}",'
+                    f' shape=oval, fillcolor="#fef2f2", color="#ef4444", fontcolor="#991b1b",'
+                    f' style="filled", penwidth=2];'
+                )
+            else:
+                dot_lines.append(
+                    f'    "{node_id}" [label="{label}", id="svg-node-special-{node_id}",'
+                    f' fillcolor="#f5f3ff", color="#8b5cf6", fontcolor="#5b21b6"];'
+                )
 
     for start_node, end_node in edges:
-        if start_node in nodes and end_node in nodes: # Ensure edge is valid
-             dot_lines.append(f'    "{start_node}" -> "{end_node}";')
-    
+        if start_node in nodes and end_node in nodes:
+            dot_lines.append(f'    "{start_node}" -> "{end_node}";')
+
     dot_lines.append('}')
     return "\n".join(dot_lines)
 

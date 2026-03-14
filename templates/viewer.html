@@ -4,23 +4,120 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JIT Log Visualizer</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('log_viewer.static', filename='style.css') }}">
+    <style>
+        /* Sidebar hover: slightly lighter, with a smooth transition */
+        .sidebar #log-list li a:hover {
+            background: rgba(37,99,235,0.08); /* soft blue */
+            color: inherit;
+            transition: background-color 140ms ease-in-out;
+        }
+        /* Ensure active item has a subtle background */
+        .sidebar #log-list li.active a {
+            background: rgba(37,99,235,0.12);
+            font-weight:600;
+        }
+        /* Basic Block Info table: highlight first two columns and align content */
+        .bbinfo table { width:100%; border-collapse:collapse; }
+        .bbinfo table thead tr { background:rgba(55, 100, 123, 0.92); }
+        /* .bbinfo table thead tr { background: linear-gradient(90deg,#2563eb,#7c3aed); } */
+        .bbinfo table thead th { color:#fff; padding:8px 6px; text-align:center; font-weight:700; }
+        .bbinfo table tbody td { padding:8px 6px; border-bottom:1px solid rgba(15,23,36,0.04); }
+        /* First column: small, centered, subtle blue highlight */
+        .bbinfo table th:nth-child(1), .bbinfo table td:nth-child(1) {
+            background: rgba(37,99,235,0.06);
+            text-align:center;
+            width:56px;
+            font-weight:600;
+        }
+        /* Second column: slightly purple-tinted highlight and centered */
+        .bbinfo table th:nth-child(2), .bbinfo table td:nth-child(2) {
+            background: rgba(124,58,237,0.04);
+            text-align:center;
+            min-width:110px;
+            font-weight:600;
+        }
+        /* Third column: left aligned for long values */
+        .bbinfo table td:nth-child(3) { text-align:left; }
+    </style>
 </head>
 <body>
+    <!-- Top-right Home button -->
+    <div style="position: absolute; top: 12px; right: 16px; z-index: 1000; display:flex; gap:8px;">
+        <a href="{{ url_for('log_viewer.index') }}" style="display:inline-flex;align-items:center;gap:8px;padding:8px 12px;background:#0078d4;color:#fff;border-radius:4px;text-decoration:none;font-weight:600;">
+            <img src="{{ url_for('log_viewer.static', filename='home-icon.svg') }}" alt="Home" style="width:18px;height:18px;display:block;filter:invert(1) hue-rotate(180deg);">
+            <span>Back to Home</span>
+        </a>
+{# Old home link removed — this app is standalone #}
+    </div>
     <div class="container">
-        <nav class="sidebar">
-            <h3>Available Logs</h3>
-            <ul>
-                {% for base, file_info in files.items() %}
-                    <li class="{{ 'active' if base == current_file }}">
-                        <a href="{{ url_for('view_log', file_base=base) }}">{{ base }}</a>
-                    </li>
-                {% endfor %}
-            </ul>
+    <!-- Sidebar toggle button (visible when sidebar is hidden) -->
+    <button id="sidebar-show-btn" type="button" title="Show sidebar" style="display:none;position:fixed;top:12px;left:12px;z-index:1001;background:#2563eb;color:#fff;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:16px;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,0.12);">&#9776;</button>
+    <nav id="sidebar" class="sidebar" style="border:1px solid rgba(0,0,0,0.06);border-radius:10px;padding:10px;background:linear-gradient(180deg,#f8fafc,#eef2ff);color:#0f172a;box-shadow:0 6px 18px rgba(15,23,36,0.04)">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                <h3 style="margin:0">Available CFG/TreeIL</h3>
+                <button id="sidebar-hide-btn" type="button" title="Hide sidebar" style="background:none;border:none;cursor:pointer;font-size:18px;color:#64748b;padding:2px 6px;border-radius:4px;">&#10005;</button>
+            </div>
+            <!-- Sidebar split: top 70% for log list/search, bottom 30% for basic block info -->
+            <!-- Reduced the subtraction so the sidebar uses more vertical space and reduces bottom whitespace -->
+            <div style="display:flex;flex-direction:column;height:calc(100vh - 100px);gap:6px;">
+                <div class="log-area" style="flex:0 0 75%;overflow:hidden;display:flex;flex-direction:column;border-bottom:1px solid rgba(0,0,0,0.06);padding-bottom:8px;">
+                    <div style="margin:4px 8px;">
+                        <input id="log-search" type="text" placeholder="Search Optimization..." style="width:100%;padding:8px;border-radius:6px;border:1px solid rgba(0,0,0,0.08);">
+                    </div>
+                    <div style="flex:1 1 auto;overflow:auto;padding-right:4px;">
+                        <ul id="log-list" style="margin:0;padding:0;">
+                            {% for base, file_info in files.items() %}
+                                <li class="{{ 'active' if base == current_file }}" style="margin-bottom:6px;list-style:none;">
+                                    <a href="{{ url_for('log_viewer.view_log', file_base=base) }}" title="{{ base }}" style="display:block;padding:8px;border-radius:6px;text-decoration:none;color:inherit;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                                        {{ short_label(base) }}
+                                    </a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="bbinfo" style="flex:0 0 25%;overflow:auto;padding:8px;background:linear-gradient(180deg,#ffffff,#fbfdff);border-radius:6px;">
+                    <h4 style="margin:0 0 8px;font-size:14px;text-align:center;padding-bottom:6px;border-bottom:1px solid rgba(0,0,0,0.04)">Basic Block Info</h4>
+                    <table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:8px">
+                        <thead>
+                            <tr>
+                                <th>Sl.No.</th>
+                                <th>Attributes</th>
+                                <th>Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td style="padding:6px 8px;text-align:center">1</td><td style="padding:6px 8px">BB_No</td><td style="padding:6px 8px">-</td></tr>
+                            <tr><td style="padding:6px 8px;text-align:center">2</td><td style="padding:6px 8px">Frequency</td><td style="padding:6px 8px">-</td></tr>
+                            <tr><td style="padding:6px 8px;text-align:center">3</td><td style="padding:6px 8px">Is_Cold</td><td style="padding:6px 8px">-</td></tr>
+                            <tr><td style="padding:6px 8px;text-align:center">4</td><td style="padding:6px 8px">BCI_Range</td><td style="padding:6px 8px">-</td></tr>
+                            <tr><td style="padding:6px 8px;text-align:center">5</td><td style="padding:6px 8px">TreeTop_Count</td><td style="padding:6px 8px">-</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </nav>
-        <main class="content">
+    <main class="content" style="text-align:left">
             {% if current_file %}
-                <h2>Displaying: {{ current_file }}</h2>
+                {# Split the current_file by '_' and extract method between first and second underscore, pass name from third to end #}
+                {% set parts = current_file.split('_') %}
+                {% set method = parts[1] if parts|length > 1 else current_file %}
+                {% set passname = parts[2:]|join('_') if parts|length > 2 else '' %}
+                <h2 class="displaying-header">
+                    <div class="disp-left">
+                        <div style="color:#64748b;font-weight:600;">Displaying:</div>
+                        <div class="displaying-meta">
+                        <span class="meta-key">Method:</span>
+                        <span class="meta-val">{{ method }}</span>
+                        <span style="opacity:0.35;">•</span>
+                        <span class="meta-key">Pass:</span>
+                        <span class="meta-val">{{ passname if passname else 'N/A' }}</span>
+                    </div>
+                    </div>
+
+                </h2>
                 <div class="viewer-grid">
                     <div class="panel" id="cfg-panel">
                         <h3>Control Flow Graph (CFG)</h3>
@@ -28,21 +125,384 @@
                             {{ svg_data | safe }}
                         </div>
                     </div>
+                    <div class="resize-handle" id="grid-resize-handle"></div>
+                    <!-- A check box like drop down for higlighting certain thing in the log file. -->
                     <div class="panel" id="trees-panel">
-                        <h3>Trees</h3>
+                        <h3 style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+                            <span>Tree IL</span>
+                            <div class="highlight-dropdown" style="position:relative;display:inline-block;">
+                                <button id="highlight-toggle-btn" type="button" style="background:#475569;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;">Highlight the selected &#9662;</button>
+                                <div id="highlight-menu" style="display:none;position:absolute;right:0;top:100%;margin-top:4px;background:#fff;border:1px solid #ddd;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.12);padding:8px 12px;z-index:100;min-width:220px;">
+                                    <label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;font-size:13px;color:#1e293b;">
+                                        <input type="checkbox" class="highlight-opt" data-pattern="jitNewObject" data-color="#fee2e2" data-border="#dc2626" value="obj-alloc">
+                                        <span style="width:12px;height:12px;border-radius:3px;background:#fee2e2;border:1px solid #dc2626;display:inline-block;"></span>
+                                        Object Allocation
+                                    </label>
+                                    <label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;font-size:13px;color:#1e293b;">
+                                        <input type="checkbox" class="highlight-opt" data-pattern="jitHeapifyStackObjectIfRequired" data-color="#dbeafe" data-border="#3b82f6" value="heap-check">
+                                        <span style="width:12px;height:12px;border-radius:3px;background:#dbeafe;border:1px solid #3b82f6;display:inline-block;"></span>
+                                        Heapification Checks
+                                    </label>
+                                    <label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;font-size:13px;color:#1e293b;">
+                                        <input type="checkbox" class="highlight-opt" data-pattern="awrtbari" data-color="#fef9c3" data-border="#ca8a04" value="write-barrier">
+                                        <span style="width:12px;height:12px;border-radius:3px;background:#fef9c3;border:1px solid #ca8a04;display:inline-block;"></span>
+                                        Write Barrier
+                                    </label>
+                                </div>
+                            </div>
+                        </h3>
                         <div class="code-container">
                             {{ trees_html | safe }}
                         </div>
                     </div>
                 </div>
             {% else %}
-                <div class="placeholder">
-                    <h1>Welcome to the JIT Log Visualizer</h1>
-                    <p>Select a log file from the navigation on the left to begin.</p>
+                <div class="placeholder" style="display:flex;flex-direction:column;align-items:center;">
+                    <div style="max-width:760px;width:100%;">
+                        <h1 style="margin-bottom:8px;text-align:center;">OpenJ9 JIT Log Visualizer</h1>
+                        <p style="color:#6b7280;margin-top:0;text-align:center;">Follow the quick steps below to generate and view Control Flow Graphs (CFG) and Tree IL from a JIT dump.</p>
+
+                        <div style="margin-top:18px; display:flex; justify-content:center;">
+                            <div style="width:100%;max-width:720px;text-align:left;">
+                                <ol style="list-style:none;padding:0;margin:0;">
+                                    <li style="display:flex;gap:12px;align-items:flex-start;margin-bottom:14px;">
+                                        <div style="min-width:36px;height:36px;border-radius:50%;background:#2563eb;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;">1</div>
+                                        <div>
+                                            <div style="font-weight:700;margin-bottom:4px;">Upload the JIT dump</div>
+                                            <div style="color:#6b7280">Choose your JIT dump file using the uploader below and provide the complete method signature (for example <code>Main.foo()V</code>).</div>
+                                        </div>
+                                    </li>
+                                    <li style="display:flex;gap:12px;align-items:flex-start;margin-bottom:14px;">
+                                        <div style="min-width:36px;height:36px;border-radius:50%;background:#10b981;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;">2</div>
+                                        <div>
+                                            <div style="font-weight:700;margin-bottom:4px;">Generate logs</div>
+                                            <div style="color:#6b7280">Click <strong>Upload and Generate</strong> to run the extractor; generated logs will appear in the list on the left.</div>
+                                        </div>
+                                    </li>
+                                    <li style="display:flex;gap:12px;align-items:flex-start;">
+                                        <div style="min-width:36px;height:36px;border-radius:50%;background:#f59e0b;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;">3</div>
+                                        <div>
+                                            <div style="font-weight:700;margin-bottom:4px;">View results</div>
+                                            <div style="color:#6b7280">Select any generated log from the left to view its CFG and Trees side-by-side.</div>
+                                        </div>
+                                    </li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="width:100%;display:flex;justify-content:center;margin-top:18px;">
+                        <div class="card" style="max-width:720px;width:100%;padding:16px;">
+                            <h3 style="margin-top:0;margin-bottom:6px;text-align:left;">Get the CFG and Tree IL for a method from JIT dump</h3>
+                            <p style="color:#6b7280;margin:0 0 12px;font-size:13px;text-align:left;">Upload a JIT dump and specify the full method name (example: <code>Main.foo()V</code>).</p>
+
+                            <div style="margin-bottom:10px;text-align:left;">
+                                <form action="{{ url_for('log_viewer.clear_generated_files') }}" method="post" onsubmit="return confirm('Clear all generated logs and uploaded files?');" style="display:inline;">
+                                    <button type="submit" style="background:#ef4444;border:none;color:#fff;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:600;box-shadow:0 4px 10px rgba(239,68,68,0.15);">Clear existing files</button>
+                                </form>
+                            </div>
+
+                            <form action="{{ url_for('log_viewer.upload_dump') }}" method="post" enctype="multipart/form-data">
+                                <div style="display:flex;flex-direction:column;gap:12px;align-items:stretch;">
+                                    <div style="display:flex;gap:12px;align-items:center;">
+                                        <label style="min-width:140px;">1. Choose dump file:</label>
+                                        <label for="dumpfile" id="dumpfile-label" style="background:#2563eb;color:#fff;padding:4px 8px;border-radius:8px;cursor:pointer;display:inline-block;">Select file</label>
+                                        <input type="file" id="dumpfile" name="dumpfile" accept="*/*" required style="display:none;">
+                                        <span id="selected-file-name" style="margin-left:8px;color:#374151;font-size:13px;"></span>
+                                    </div>
+                                    <div style="display:flex;gap:12px;align-items:center;">
+                                        <label style="min-width:120px;">2. Found methods:</label>
+                                        <select id="method-select" style="min-width:260px;padding:8px;border-radius:6px;border:1px solid rgba(0,0,0,0.08);background:white;color:inherit">
+                                            <option value="">-- select the method --</option>
+                                        </select>
+                                        <span id="method-count" style="font-size:12px;color:#475569;min-width:150px;">Detected: 0 methods</span>
+                                    </div>
+                                        <div style="display:flex;gap:12px;align-items:center;">
+                                        <label for="method" style="min-width:140px;">3. Selected method:</label>
+                                        <input type="text" id="method" name="method" placeholder="Main.foo()V" required style="min-width:260px;padding:8px;border-radius:6px;border:1px solid rgba(0,0,0,0.08)">
+                                    </div>
+                                    <div style="margin-top:6px;text-align:left;">
+                                        <button type="submit" style="background:#2563eb;color:#fff;padding:10px 14px;border-radius:8px;border:none;cursor:pointer">Upload and Generate</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             {% endif %}
         </main>
     </div>
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script src="{{ url_for('log_viewer.static', filename='script.js') }}"></script>
+    <script>
+        // Update displayed filename when a file is selected
+        (function(){
+            document.addEventListener('DOMContentLoaded', function(){
+                var input = document.getElementById('dumpfile');
+                var out = document.getElementById('selected-file-name');
+                if(!input || !out) return;
+                input.addEventListener('change', function(){
+                    if(input.files && input.files.length){
+                        out.textContent = input.files[0].name;
+                    } else {
+                        out.textContent = '';
+                    }
+                });
+            });
+        })();
+    </script>
+    <script>
+        // Extract method names from the uploaded dump and populate the select dropdown
+        (function(){
+            document.addEventListener('DOMContentLoaded', function(){
+                var input = document.getElementById('dumpfile');
+                var select = document.getElementById('method-select');
+                var methodInput = document.getElementById('method');
+                var methodCount = document.getElementById('method-count');
+                if(!input || !select) return;
+
+                function extractMethods(text){
+                    var methods = new Set();
+                    var m;
+
+                    function addMethod(raw){
+                        if(!raw) return;
+                        var name = String(raw).trim();
+                        if(!name) return;
+                        // Normalize known wrappers/punctuation around captured names.
+                        name = name.replace(/^[=\-:\s>]+/, '').replace(/[\s"'>,]+$/, '');
+                        if(name.indexOf('(') === -1 || name.indexOf(')') === -1) return;
+                        methods.add(name);
+                    }
+
+                    // Pattern 1: <compile ... name="..."> (some dumps keep full signatures in name).
+                    var re1 = /<compile\b[^>]*\bname=["']([^"']+)["'][^>]*>/gi;
+                    while((m = re1.exec(text)) !== null){ addMethod(m[1]); }
+
+                    // Pattern 2: <compile ... method="...">.
+                    var re2 = /<compile\b[^>]*\bmethod=["']([^"']+)["'][^>]*>/gi;
+                    while((m = re2.exec(text)) !== null){ addMethod(m[1]); }
+
+                    // Pattern 3: generic method attributes across the dump.
+                    var re3 = /\bmethod=["']([^"']+)["']/gi;
+                    while((m = re3.exec(text)) !== null){ addMethod(m[1]); }
+
+                    // Pattern 4: OpenJ9 method boundary markers (=======>full/signature).
+                    var re4 = /^=+>\s*([^\r\n]+)/gm;
+                    while((m = re4.exec(text)) !== null){ addMethod(m[1]); }
+
+                    // Pattern 5: fallback for dotted signatures with any return descriptor.
+                    var re5 = /[A-Za-z0-9_\/$]+\.[A-Za-z0-9_$<>]+\([^\)]*\)(?:[BCDFIJSVZ]|L[^;\s]+;|\[[^\s<>"]+)/g;
+                    while((m = re5.exec(text)) !== null){ addMethod(m[0]); }
+
+                    return Array.from(methods).sort(function(a,b){ return a.localeCompare(b); });
+                }
+
+                input.addEventListener('change', function(){
+                    var file = input.files && input.files[0];
+                    if(!file) return;
+                    if(methodCount){ methodCount.textContent = 'Detected: scanning...'; }
+                    var reader = new FileReader();
+                    reader.onload = function(e){
+                        try{
+                            var txt = e.target.result || '';
+                            var methods = extractMethods(txt);
+                            // clear select
+                            select.innerHTML = '<option value="">-- choose detected method --</option>';
+                            methods.forEach(function(name){
+                                var opt = document.createElement('option');
+                                opt.value = name; opt.textContent = name;
+                                select.appendChild(opt);
+                            });
+                            if(methodCount){
+                                methodCount.textContent = 'Detected: ' + methods.length + ' method' + (methods.length === 1 ? '' : 's');
+                            }
+                        }catch(err){
+                            console.error('Failed to parse file for methods', err);
+                            if(methodCount){ methodCount.textContent = 'Detected: parse failed'; }
+                        }
+                    };
+                    reader.readAsText(file);
+                });
+
+                select.addEventListener('change', function(){
+                    if(this.value){ methodInput.value = this.value; }
+                });
+            });
+        })();
+    </script>
+    <script>
+        // Sidebar search filter for available logs
+        (function(){
+            document.addEventListener('DOMContentLoaded', function(){
+                var search = document.getElementById('log-search');
+                var list = document.getElementById('log-list');
+                if(!search || !list) return;
+                var items = Array.from(list.querySelectorAll('li'));
+                var timeout = null;
+                function doFilter(){
+                    var q = (search.value || '').trim().toLowerCase();
+                    items.forEach(function(li){
+                        var text = (li.textContent || '').trim().toLowerCase();
+                        if(q === '' || text.indexOf(q) !== -1){ li.style.display = ''; }
+                        else { li.style.display = 'none'; }
+                    });
+                }
+                search.addEventListener('input', function(){
+                    if(timeout) clearTimeout(timeout);
+                    timeout = setTimeout(doFilter, 150);
+                });
+            });
+        })();
+    </script>
+    <script>
+    // Highlight dropdown toggle and line-level highlighting in Tree IL
+    (function(){
+        document.addEventListener('DOMContentLoaded', function(){
+            var btn = document.getElementById('highlight-toggle-btn');
+            var menu = document.getElementById('highlight-menu');
+            if(!btn || !menu) return;
+
+            var checkboxes = menu.querySelectorAll('.highlight-opt');
+
+            // Restore saved checkbox state from localStorage
+            checkboxes.forEach(function(cb){
+                var saved = localStorage.getItem('hl_' + cb.value);
+                if(saved === 'true') cb.checked = true;
+            });
+
+            // Toggle dropdown open/close
+            btn.addEventListener('click', function(e){
+                e.stopPropagation();
+                menu.style.display = (menu.style.display === 'none') ? 'block' : 'none';
+            });
+            document.addEventListener('click', function(){ menu.style.display = 'none'; });
+            menu.addEventListener('click', function(e){ e.stopPropagation(); });
+
+            // Cache original HTML of each code block once
+            var codeContainer = document.querySelector('.code-container');
+            if(!codeContainer) return;
+
+            var codeEls = codeContainer.querySelectorAll('pre code');
+            var originals = [];
+            codeEls.forEach(function(el){ originals.push(el.innerHTML); });
+
+            // On any checkbox change, save state and re-apply highlights
+            checkboxes.forEach(function(cb){
+                cb.addEventListener('change', function(){
+                    localStorage.setItem('hl_' + cb.value, cb.checked);
+                    applyHighlights();
+                });
+            });
+
+            // Apply highlights on initial load if any checkboxes were restored
+            applyHighlights();
+
+            function applyHighlights(){
+                // Collect active patterns
+                var active = [];
+                checkboxes.forEach(function(cb){
+                    if(cb.checked){
+                        active.push({
+                            pattern: cb.getAttribute('data-pattern'),
+                            color: cb.getAttribute('data-color'),
+                            border: cb.getAttribute('data-border')
+                        });
+                    }
+                });
+
+                codeEls.forEach(function(el, idx){
+                    // Reset to original content
+                    var html = originals[idx];
+
+                    if(active.length === 0){
+                        el.innerHTML = html;
+                        return;
+                    }
+
+                    // Process line by line to highlight matching lines
+                    var lines = html.split('\n');
+                    for(var i = 0; i < lines.length; i++){
+                        for(var j = 0; j < active.length; j++){
+                            if(lines[i].indexOf(active[j].pattern) !== -1){
+                                lines[i] = '<span class="hl-line" style="background:' + active[j].color + ';border-left:3px solid ' + active[j].border + ';padding-left:4px;display:inline-block;width:100%;">' + lines[i] + '</span>';
+                                break; // first match wins for this line
+                            }
+                        }
+                    }
+                    el.innerHTML = lines.join('\n');
+                });
+            }
+        });
+    })();
+    </script>
+    <script>
+    // Sidebar hide/show toggle
+    (function(){
+        document.addEventListener('DOMContentLoaded', function(){
+            var sidebar = document.getElementById('sidebar');
+            var hideBtn = document.getElementById('sidebar-hide-btn');
+            var showBtn = document.getElementById('sidebar-show-btn');
+            if(!sidebar || !hideBtn || !showBtn) return;
+
+            // Restore saved state
+            if(localStorage.getItem('sidebar_hidden') === 'true'){
+                sidebar.classList.add('hidden');
+                showBtn.style.display = 'block';
+            }
+
+            hideBtn.addEventListener('click', function(){
+                sidebar.classList.add('hidden');
+                showBtn.style.display = 'block';
+                localStorage.setItem('sidebar_hidden', 'true');
+            });
+            showBtn.addEventListener('click', function(){
+                sidebar.classList.remove('hidden');
+                showBtn.style.display = 'none';
+                localStorage.setItem('sidebar_hidden', 'false');
+            });
+        });
+    })();
+    </script>
+    <script>
+    // Drag-to-resize CFG / Tree IL panels
+    (function(){
+        document.addEventListener('DOMContentLoaded', function(){
+            var handle = document.getElementById('grid-resize-handle');
+            var grid = handle && handle.parentElement;
+            if(!handle || !grid) return;
+
+            var cfgPanel = grid.querySelector('#cfg-panel');
+            if(!cfgPanel) return;
+
+            var dragging = false;
+
+            handle.addEventListener('mousedown', function(e){
+                e.preventDefault();
+                dragging = true;
+                handle.classList.add('dragging');
+                document.body.style.cursor = 'col-resize';
+                document.body.style.userSelect = 'none';
+            });
+
+            document.addEventListener('mousemove', function(e){
+                if(!dragging) return;
+                var rect = grid.getBoundingClientRect();
+                var offset = e.clientX - rect.left;
+                var pct = (offset / rect.width) * 100;
+                if(pct < 15) pct = 15;
+                if(pct > 80) pct = 80;
+                cfgPanel.style.flex = '0 0 ' + pct + '%';
+            });
+
+            document.addEventListener('mouseup', function(){
+                if(!dragging) return;
+                dragging = false;
+                handle.classList.remove('dragging');
+                document.body.style.cursor = '';
+                document.body.style.userSelect = '';
+            });
+        });
+    })();
+    </script>
 </body>
 </html>

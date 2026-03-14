@@ -1,7 +1,7 @@
-/* --- Google Fonts Import --- */
+/* Fonts used across the viewer. */
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Source+Code+Pro&display=swap');
 
-/* --- General Body & Theme --- */
+/* Base page theme. */
 body, html {
     margin: 0;
     padding: 0;
@@ -11,21 +11,30 @@ body, html {
     color: #333;
 }
 
-/* --- Main Layout Container --- */
+/* Two-column app shell. */
 .container {
     display: flex;
     height: 100vh;
 }
 
-/* --- Sidebar Navigation --- */
+/* Left sidebar list and controls. */
 .sidebar {
-    width: 350px; /* A bit wider for long filenames */
-    background-color: #2c3e50; /* Dark blue-gray */
-    color: #ecf0f1; /* Light text color */
+    width: 220px;
+    background-color: #2c3e50;
+    color: #ecf0f1;
     padding: 20px;
     overflow-y: auto;
     box-shadow: 2px 0 5px rgba(0,0,0,0.1);
     flex-shrink: 0;
+    transition: width 0.2s ease, margin 0.2s ease, opacity 0.2s ease;
+}
+
+.sidebar.hidden {
+    width: 0;
+    padding: 0;
+    overflow: hidden;
+    border: none !important;
+    opacity: 0;
 }
 
 .sidebar h3 {
@@ -35,9 +44,43 @@ body, html {
     margin-top: 0;
 }
 
+/* Header above the two-panel viewer. */
+.displaying-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    padding:10px 14px;
+    background: linear-gradient(90deg,#f0f7ff,#eef6ff);
+    border:1px solid rgba(14,165,233,0.08);
+    border-radius:10px;
+    box-shadow:0 6px 18px rgba(15,23,36,0.04);
+    color:#0f172a;
+    margin:0 0 12px 0;
+}
+.displaying-header .disp-left{display:flex;align-items:center;gap:10px;min-width:0}
+.displaying-header .disp-file{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.displaying-meta{font-size:0.9rem;color:#475569;background:#fff;padding:6px 10px;border-radius:999px;border:1px solid rgba(15,23,36,0.04);display:inline-flex;gap:10px;align-items:center}
+.displaying-meta .meta-key{color:#94a3b8;font-weight:600;margin-right:4px}
+.displaying-meta .meta-val{font-weight:700;color:#0f172a}
+
+@media (max-width:780px){
+    .displaying-header{flex-direction:column;align-items:flex-start}
+    .displaying-meta{margin-top:6px}
+}
+
 .sidebar ul {
     list-style-type: none;
     padding: 0;
+}
+
+/* Keep the sidebar search centered and readable. */
+.sidebar .log-area #log-search {
+    width: 100%;
+    max-width: 300px;
+    margin: auto; /* center horizontally */
+    display: block;
+    box-sizing: border-box;
 }
 
 .sidebar li a {
@@ -52,7 +95,7 @@ body, html {
 }
 
 .sidebar li a:hover {
-    background-color: #34495e;
+    background-color: #394c5e;
     color: #ffffff;
 }
 
@@ -63,21 +106,43 @@ body, html {
 }
 .content {
     flex-grow: 1;
-    padding: 20px;
+    padding: 5px;
     overflow: hidden; /* Prevent content from pushing layout */
 }
 
-/* --- 35% / 65% Viewer Grid --- */
+/* Resizable CFG + Tree IL layout. */
 .viewer-grid {
-    display: grid;
-    /* This is the key change for the layout ratio */
-    grid-template-columns: 35fr 65fr; 
-    gap: 25px;
-    height: calc(100vh - 120px); /* Adjust height for padding and header */
+    display: flex;
+    gap: 0;
+    height: calc(100vh - 80px);
+}
+
+.viewer-grid .panel:first-child {
+    flex: 0 0 40%;
+    min-width: 200px;
+}
+
+.viewer-grid .panel:last-child {
+    flex: 1 1 auto;
+    min-width: 200px;
+}
+
+/* Drag handle between panels. */
+.viewer-grid .resize-handle {
+    width: 6px;
+    cursor: col-resize;
+    background: #e2e8f0;
+    border-radius: 3px;
+    flex-shrink: 0;
+    transition: background 0.15s;
+}
+.viewer-grid .resize-handle:hover,
+.viewer-grid .resize-handle.dragging {
+    background: #3b82f6;
 }
 
 
-/* --- CFG & Trees Panels --- */
+/* Main content panels. */
 .panel {
     background-color: #ffffff;
     border: 1px solid #ddd;
@@ -90,17 +155,25 @@ body, html {
 
 .panel h3 {
     margin: 0;
-    padding: 15px 20px;
-    font-size: 1.1em;
+    padding: 10px 12px; /* slightly reduced header padding */
+    font-size: 1.05em;
     background-color: #f8f9fa;
     border-bottom: 1px solid #ddd;
     color: #34495e;
 }
 
 .svg-container, .code-container {
-    padding: 10px;
+    padding: 6px; /* tighter content padding to maximize space */
     overflow: auto; /* IMPORTANT for scrolling */
     flex-grow: 1;
+}
+
+/* Subtle grid helps users track edges in dense graphs. */
+.svg-container {
+    background:
+        radial-gradient(circle, #cbd5e1 0.6px, transparent 0.6px);
+    background-size: 16px 16px;
+    background-color: #f8fafc;
 }
 
 .code-container pre {
@@ -111,40 +184,50 @@ body, html {
     background-color: #fff8c4;
 }
 
-/* Make the SVG nodes clickable */
-.node:hover polygon {
-    stroke: red;
-    stroke-width: 3px;
+/* Hover/click affordance for graph nodes. */
+.node {
+    cursor: pointer;
+    transition: filter 0.15s ease;
 }
 
-/* Add this to the end of your existing style.css file */
+.node:hover {
+    filter: drop-shadow(0 0 6px rgba(59, 130, 246, 0.45));
+}
 
-/* Style for the highlighted block in the Trees panel */
+.node:hover polygon, .node:hover ellipse {
+    stroke: #2563eb;
+    stroke-width: 2.5px;
+}
+
+/* Highlight selected Tree IL block. */
 .code-block.highlight {
-    background-color: #fff8c4;
-    border-radius: 5px;
+    background-color: #fef3c7;
+    border-left: 3px solid #f59e0b;
+    border-radius: 4px;
 }
 
-/* Style for the clicked node in the SVG panel */
-.node.highlight-svg polygon {
-    stroke: #D32F2F; /* A prominent red color */
-    stroke-width: 3px;
+/* Highlight selected SVG node. */
+.node.highlight-svg polygon,
+.node.highlight-svg ellipse {
+    stroke: #2563eb;
+    stroke-width: 2.5px;
+}
+.node.highlight-svg {
+    filter: drop-shadow(0 0 8px rgba(37, 99, 235, 0.5));
 }
 
-/* --- Highlighting Styles --- */
-.code-block.highlight {
-    background-color: #FFF3CD; /* Bootstrap's 'warning' yellow */
-    border-radius: 5px;
-}
+/* Pattern-highlighting utility class. */
 
-.node.highlight-svg polygon {
-    stroke: #e74c3c; /* A strong, clear red */
-    stroke-width: 3.5px;
-}
-
-/* --- Welcome Placeholder --- */
+/* Empty-state home panel. */
 .placeholder {
     text-align: center;
     padding-top: 20vh;
     color: #777;
+}
+
+/* Per-line highlight span used in Tree IL filters. */
+.hl-line {
+    display: inline;
+    padding: 1px 0;
+    border-radius: 2px;
 }

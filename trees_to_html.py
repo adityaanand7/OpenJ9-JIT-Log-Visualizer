@@ -2,37 +2,32 @@ import re
 import sys
 import html
 
+# Convert Tree IL text into HTML blocks addressable from CFG clicks.
 def parse_trees_to_html(trees_content):
     """
     Parses a trees log, correctly escaping HTML and wrapping each BBStart..BBEnd 
     block in a uniquely identifiable div for precise highlighting.
     """
     
-    # 1. Escape all HTML special characters (<, >, &) in the entire log first.
-    # This prevents the browser from interpreting log syntax as HTML tags.
+    # Escape log text first so Tree IL symbols are shown literally in the browser.
     escaped_content = html.escape(trees_content)
 
-    # 2. Use a robust regex to find each complete block from BBStart to BBEnd.
-    # - re.DOTALL allows '.' to match newlines.
-    # - The '?' makes the '.*?' non-greedy, so it stops at the first BBEnd.
-    # - It captures the memory address from the BBStart line.
+    # Match each BBStart...BBEnd region and capture its address for linking.
     block_pattern = re.compile(
         r'(n\d+n\s+BBStart.*?\[(0x[0-9a-f]+)\].*?n\d+n\s+BBEnd.*?)',
         re.DOTALL
     )
 
     def replace_with_div(match):
-        """A helper function to wrap a matched block with a div."""
+        """Wrap a BB block in a div with a stable id derived from its address."""
         block_text = match.group(1)
         address = match.group(2)
-        # This creates a self-contained div for each block.
         return f'</div><div class="code-block" id="addr-{address}"><pre><code>{block_text}</code></pre></div><div class="code-block-unlinked"><pre><code>'
 
-    # 3. Apply the replacement to the escaped content.
-    # We wrap everything in <pre><code> tags for proper formatting.
+    # Replace each block and keep everything else in a plain unlinked container.
     processed_content = block_pattern.sub(replace_with_div, escaped_content)
     
-    # Start with an opening tag for any content before the first block.
+    # Include any header text that appears before the first BBStart section.
     final_html = f'<div class="code-block-unlinked"><pre><code>{processed_content}</code></pre></div>'
     
     return final_html

@@ -1,16 +1,13 @@
 #!/bin/bash
 
-# --- JIT Extractor Runner ---
-# This script simplifies running the Python JIT extractor by taking the
-# log filename and method name as arguments and constructing the full command.
+# Convenience wrapper used by the web route and manual CLI runs.
+# Inputs: dump filename + full method signature.
 
-# --- CONFIGURATION ---
-# The fixed paths to your script and log directory.
+# Fixed locations used by this repository layout.
 SCRIPT_PATH="tree-cfg-extractor/jit_cfg_extractor.py"
 LOG_DIR="complete_log_file"
 
-# --- ARGUMENT VALIDATION ---
-# Check if exactly two arguments were provided.
+# Require exactly two args: file and method.
 if [ "$#" -ne 2 ]; then
     echo "Usage: $0 <log_file_name> \"<method_name>\""
     echo "--------------------------------------------------"
@@ -19,28 +16,25 @@ if [ "$#" -ne 2 ]; then
     exit 1
 fi
 
-# --- ASSIGN ARGUMENTS TO VARIABLES ---
 LOG_FILE_NAME=$1
 METHOD_NAME=$2
 FULL_LOG_PATH="${LOG_DIR}/${LOG_FILE_NAME}"
 
-# --- PRE-RUN CHECKS ---
-# Check if the Python script exists
+# Basic safety checks before extraction.
 if [ ! -f "$SCRIPT_PATH" ]; then
     echo "Error: Python extractor not found at '$SCRIPT_PATH'"
     exit 1
 fi
 
-# Check if the log file exists
 if [ ! -f "$FULL_LOG_PATH" ]; then
     echo "Error: Log file not found at '$FULL_LOG_PATH'"
     exit 1
 fi
 
-#Clean log file folder (logs)
+# Clear old outputs so this run contains only the selected method.
 rm -rf logs/*
 
-# --- EXECUTE THE COMMANDS ---
+# Run both extraction modes expected by the viewer.
 echo "--- Running for Trees ---"
 python3 "$SCRIPT_PATH" "$FULL_LOG_PATH" "$METHOD_NAME" "trees"
 mv *.log logs/

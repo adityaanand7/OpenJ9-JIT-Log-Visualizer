@@ -2,6 +2,7 @@ import re
 import sys
 import os
 
+# Shared extractor used by the UI script for both Trees and CFG output.
 def clean_filename(text):
     """Creates a safe filename from a string."""
     safe_text = re.sub(r'[^\w\s.-]', '', text).strip()
@@ -50,12 +51,11 @@ def extract_trees_from_block(method_block, safe_method_name):
         print(f"\nNo <trees> blocks found in this section.")
         return
 
-    # Use enumerate to get a counter (i) starting from 0
+    # Number files so phases stay ordered in the sidebar.
     for i, (full_block, title) in enumerate(matches):
         safe_title = clean_filename(title)
         
-        # --- MODIFIED LINE ---
-        # Prepend the counter (i + 1) to the filename
+        # Start numbering at 1 for user-friendly filenames.
         output_filename = f"{i + 1}_{safe_method_name}_{safe_title}_trees.log"
         
         try:
@@ -78,7 +78,7 @@ def extract_cfgs_from_block(method_block, safe_method_name):
         print(f"\nNo <cfg> blocks found in this section.")
         return
 
-    # Use enumerate to get a counter (i) starting from 0
+    # Number output files to preserve pass order.
     for i, (cfg_start, cfg_block) in enumerate(cfgs):
         current_phase_name = "Untitled"
         for phase_start, phase_title in phases:
@@ -89,13 +89,16 @@ def extract_cfgs_from_block(method_block, safe_method_name):
         
         safe_phase_name = clean_filename(current_phase_name)
         
-        # --- MODIFIED LINE ---
-        # Prepend the counter (i + 1) to the filename
+        # Drop heavy <structure> payloads so output stays focused and lighter.
+        structure_pattern = re.compile(r'<structure>.*?</structure>', re.DOTALL)
+        cleaned_cfg_block = re.sub(structure_pattern, '', cfg_block).strip()
+        
+        # Start numbering at 1 for readability.
         output_filename = f"{i + 1}_{safe_method_name}_{safe_phase_name}_cfg.log"
 
         try:
             with open(output_filename, 'w', encoding='utf-8') as outfile:
-                outfile.write(cfg_block)
+                outfile.write(cleaned_cfg_block)
             print(f"Extracted CFG for phase '{current_phase_name}' to file: {output_filename}")
         except Exception as e:
             print(f"Error writing file {output_filename}: {e}")
