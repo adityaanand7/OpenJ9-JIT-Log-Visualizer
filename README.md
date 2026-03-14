@@ -63,7 +63,7 @@ sudo dnf install graphviz
 1. **Clone the repository**
 
    ```bash
-   git clone https://github.com/<your-username>/OpenJ9-JIT-Log-Visualizer.git
+   git clone https://github.com/adityaanand7/OpenJ9-JIT-Log-Visualizer.git
    cd OpenJ9-JIT-Log-Visualizer
    ```
 
