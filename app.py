@@ -5,6 +5,7 @@ from routes import log_viewer_bp
 # Small app factory so setup stays in one place.
 def create_app():
     app = Flask(__name__)
+    app.secret_key = os.urandom(24)
 
     # Keep runtime folders ready so first upload/view works without manual setup.
     base_dir = os.path.dirname(__file__)

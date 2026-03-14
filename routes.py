@@ -1,4 +1,4 @@
-from flask import Flask, render_template, abort, request, redirect, url_for, current_app
+from flask import Flask, render_template, abort, request, redirect, url_for, current_app, session, jsonify
 import os
 import re
 import glob
@@ -90,12 +90,109 @@ def sort_log_pairs(pairs_dict):
     sorted_items = sorted(pairs_dict.items(), key=natural_sort_key)
     return OrderedDict(sorted_items)
 
+
+def scan_methods_from_file(filepath):
+    """Scans a JIT log file line-by-line for <compile> blocks,
+    extracting method and hotness attributes. Returns a list of dicts.
+    Works efficiently on multi-GB files since it never loads the whole file.
+    """
+    methods = []
+    seen = set()
+    in_compile = False
+    block_lines = []
+
+    with open(filepath, 'r', errors='replace') as f:
+        for line in f:
+            if '<compile' in line:
+                in_compile = True
+                block_lines = [line]
+            elif in_compile:
+                block_lines.append(line)
+
+            if in_compile and '>' in line:
+                block = ''.join(block_lines)
+                in_compile = False
+                block_lines = []
+
+                mm = re.search(r'\bmethod\s*=\s*"([^"]+)"', block)
+                if not mm:
+                    continue
+                method_name = mm.group(1).strip()
+                hm = re.search(r'\bhotness\s*=\s*"([^"]+)"', block)
+                hotness = hm.group(1).strip() if hm else 'unknown'
+                entry = f"{method_name}-{hotness}"
+                if entry not in seen:
+                    seen.add(entry)
+                    methods.append({'display': entry, 'method': method_name, 'hotness': hotness})
+
+    methods.sort(key=lambda x: x['display'])
+    return methods
+
 @log_viewer_bp.route('/')
 def index():
     """Lists all available log pairs in sorted order."""
     complete_pairs = find_log_pairs()
     sorted_pairs = sort_log_pairs(complete_pairs)
-    return render_template('viewer.html', files=sorted_pairs, current_file=None, short_label=make_short_label)
+    uploaded_file = session.get('uploaded_file', '')
+    opt_level = session.get('opt_level', '')
+    return render_template('viewer.html', files=sorted_pairs, current_file=None,
+                           short_label=make_short_label, uploaded_file=uploaded_file,
+                           opt_level=opt_level)
+
+
+@log_viewer_bp.route('/upload-file', methods=['POST'])
+def upload_file_only():
+    """AJAX endpoint: saves the uploaded file and scans it for methods.
+    Returns JSON with the filename + methods list. Does NOT run the extractor.
+    """
+    uploads_dir = os.path.join(os.path.dirname(__file__), 'uploads')
+    os.makedirs(uploads_dir, exist_ok=True)
+
+    uploaded = request.files.get('dumpfile')
+    if not uploaded or uploaded.filename == '':
+        return jsonify({'error': 'No file provided'}), 400
+
+    filename = secure_filename(uploaded.filename)
+    saved_path = os.path.join(uploads_dir, filename)
+    uploaded.save(saved_path)
+    file_size = os.path.getsize(saved_path)
+    current_app.logger.info(f"Uploaded file saved: {filename} ({file_size / 1024:.1f} KB)")
+
+    # Also copy to complete_log_file/ for the extractor
+    script_log_dir = os.path.join(os.path.dirname(__file__), 'complete_log_file')
+    os.makedirs(script_log_dir, exist_ok=True)
+    dest_path = os.path.join(script_log_dir, filename)
+    current_app.logger.info(f"Copying {filename} to {script_log_dir}/ ...")
+    shutil.copy2(saved_path, dest_path)
+    current_app.logger.info(f"Copy complete: {dest_path}")
+
+    # Scan for methods
+    current_app.logger.info(f"Scanning {filename} for <compile> blocks ...")
+    methods = scan_methods_from_file(saved_path)
+    current_app.logger.info(f"Found {len(methods)} methods in {filename}")
+
+    # Remember the filename in session
+    session['uploaded_file'] = filename
+
+    return jsonify({'filename': filename, 'size': file_size, 'methods': methods})
+
+
+@log_viewer_bp.route('/scan-methods', methods=['GET'])
+def scan_methods():
+    """Returns methods for the currently uploaded file (from session)."""
+    filename = session.get('uploaded_file', '')
+    if not filename:
+        return jsonify({'error': 'No file uploaded', 'methods': []}), 404
+
+    uploads_dir = os.path.join(os.path.dirname(__file__), 'uploads')
+    filepath = os.path.join(uploads_dir, filename)
+    if not os.path.isfile(filepath):
+        session.pop('uploaded_file', None)
+        return jsonify({'error': 'File not found', 'methods': []}), 404
+
+    methods = scan_methods_from_file(filepath)
+    file_size = os.path.getsize(filepath)
+    return jsonify({'filename': filename, 'size': file_size, 'methods': methods})
 
 @log_viewer_bp.route('/view/<string:file_base>')
 def view_log(file_base):
@@ -129,17 +226,18 @@ def view_log(file_base):
         current_file=file_base,
         svg_data=svg_data,
         trees_html=trees_html,
-        short_label=make_short_label
+        short_label=make_short_label,
+        uploaded_file=session.get('uploaded_file', ''),
+        opt_level=session.get('opt_level', '')
     )
 
 
 @log_viewer_bp.route('/upload', methods=['POST'])
 def upload_dump():
-    """Handles an uploaded JIT dump and method name, clears the logs folder,
-    stores the uploaded file in the repo `uploads/` folder, and runs the
-    generate-tree-cfg.sh script located in this blueprint's directory.
+    """Handles method generation. If a file was previously uploaded (in session),
+    it reuses that file. Otherwise expects a new file upload.
+    Clears the logs folder and runs generate-tree-cfg.sh.
     """
-    # Ensure uploads directory exists within this project
     uploads_dir = os.path.join(os.path.dirname(__file__), 'uploads')
     os.makedirs(uploads_dir, exist_ok=True)
 
@@ -158,33 +256,43 @@ def upload_dump():
     except Exception as e:
         current_app.logger.exception(f"Failed to clear logs directory: {e}")
 
-    # Get the uploaded file and method name
-    uploaded = request.files.get('dumpfile')
     method = (request.form.get('method') or '').strip()
-    if not uploaded or uploaded.filename == '' or not method:
-        current_app.logger.warning('Upload failed: missing file or method')
+    hotness = (request.form.get('hotness') or '').strip()
+    if not method:
+        current_app.logger.warning('Upload failed: missing method')
         return redirect(url_for('log_viewer.index'))
 
-    filename = secure_filename(uploaded.filename)
-    saved_path = os.path.join(uploads_dir, filename)
-    try:
+    # Check if file was already uploaded (session) or if a new file is being sent
+    uploaded = request.files.get('dumpfile')
+    has_new_file = uploaded and uploaded.filename != ''
+
+    if has_new_file:
+        filename = secure_filename(uploaded.filename)
+        saved_path = os.path.join(uploads_dir, filename)
         uploaded.save(saved_path)
-    except Exception as e:
-        current_app.logger.exception(f"Failed to save uploaded file: {e}")
-        return redirect(url_for('log_viewer.index'))
+        session['uploaded_file'] = filename
 
-    # Ensure the directory the generator expects exists and copy the file there
-    script_log_dir = os.path.join(os.path.dirname(__file__), 'complete_log_file')
-    try:
+        # Copy to complete_log_file/
+        script_log_dir = os.path.join(os.path.dirname(__file__), 'complete_log_file')
         os.makedirs(script_log_dir, exist_ok=True)
         dest_path = os.path.join(script_log_dir, filename)
         shutil.copy2(saved_path, dest_path)
-        current_app.logger.info(f"Copied uploaded file to script log dir: {dest_path}")
-    except Exception as e:
-        current_app.logger.exception(f"Failed to copy uploaded file into script log dir: {e}")
-        return redirect(url_for('log_viewer.index'))
+    else:
+        filename = session.get('uploaded_file', '')
+        if not filename:
+            current_app.logger.warning('Upload failed: no file in session')
+            return redirect(url_for('log_viewer.index'))
+        # Verify the file still exists in complete_log_file/
+        script_log_dir = os.path.join(os.path.dirname(__file__), 'complete_log_file')
+        if not os.path.isfile(os.path.join(script_log_dir, filename)):
+            current_app.logger.warning(f'File {filename} not found in complete_log_file/')
+            session.pop('uploaded_file', None)
+            return redirect(url_for('log_viewer.index'))
 
-    # Run the generator script (in the log_viewer directory)
+    current_app.logger.info(f"Generating trees/cfg for method={method} (hotness={hotness}) from {filename}")
+    session['opt_level'] = hotness
+
+    # Run the generator script
     script_path = os.path.join(os.path.dirname(__file__), 'generate-tree-cfg.sh')
     try:
         proc = subprocess.run(
@@ -202,46 +310,33 @@ def upload_dump():
         current_app.logger.exception(f"Failed to run generator script: {e}")
 
     # After extraction, reload index so fresh pass files appear in sidebar.
-    return redirect(url_for('log_viewer.index'))
+    return redirect(url_for('log_viewer.index', generated=1))
 
 
 @log_viewer_bp.route('/clear', methods=['POST'])
 def clear_generated_files():
-    """Clears files from the logs directory and the uploads directory.
+    """Clears files from the logs directory, uploads, complete_log_file, and session.
     Redirects to the log viewer index afterwards.
     """
     uploads_dir = os.path.join(os.path.dirname(__file__), 'uploads')
+    complete_dir = os.path.join(os.path.dirname(__file__), 'complete_log_file')
 
-    # Clear logs
-    try:
-        if os.path.isdir(LOG_DIR):
-            for entry in os.listdir(LOG_DIR):
-                path = os.path.join(LOG_DIR, entry)
-                try:
-                    if os.path.isfile(path) or os.path.islink(path):
-                        os.unlink(path)
-                    elif os.path.isdir(path):
-                        shutil.rmtree(path)
-                except Exception:
-                    current_app.logger.exception(f"Failed to remove {path}")
-    except Exception:
-        current_app.logger.exception("Failed to clear logs directory")
+    for dir_path in [LOG_DIR, uploads_dir, complete_dir]:
+        try:
+            if os.path.isdir(dir_path):
+                for entry in os.listdir(dir_path):
+                    path = os.path.join(dir_path, entry)
+                    try:
+                        if os.path.isfile(path) or os.path.islink(path):
+                            os.unlink(path)
+                        elif os.path.isdir(path):
+                            shutil.rmtree(path)
+                    except Exception:
+                        current_app.logger.exception(f"Failed to remove {path}")
+        except Exception:
+            current_app.logger.exception(f"Failed to clear {dir_path}")
 
-    # Clear uploads
-    try:
-        if os.path.isdir(uploads_dir):
-            for entry in os.listdir(uploads_dir):
-                path = os.path.join(uploads_dir, entry)
-                try:
-                    if os.path.isfile(path) or os.path.islink(path):
-                        os.unlink(path)
-                    elif os.path.isdir(path):
-                        shutil.rmtree(path)
-                except Exception:
-                    current_app.logger.exception(f"Failed to remove upload {path}")
-    except Exception:
-        current_app.logger.exception("Failed to clear uploads directory")
-
+    session.pop('uploaded_file', None)
     return redirect(url_for('log_viewer.index'))
 
 # if __name__ == '__main__':

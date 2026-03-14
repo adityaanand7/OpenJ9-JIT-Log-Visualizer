@@ -104,13 +104,26 @@
                 {# Split the current_file by '_' and extract method between first and second underscore, pass name from third to end #}
                 {% set parts = current_file.split('_') %}
                 {% set method = parts[1] if parts|length > 1 else current_file %}
-                {% set passname = parts[2:]|join('_') if parts|length > 2 else '' %}
+                {% set passname = parts[2:]|join(' ') if parts|length > 2 else '' %}
                 <h2 class="displaying-header">
                     <div class="disp-left">
                         <div style="color:#64748b;font-weight:600;">Displaying:</div>
                         <div class="displaying-meta">
                         <span class="meta-key">Method:</span>
                         <span class="meta-val">{{ method }}</span>
+                        {% if opt_level %}
+                        <span style="opacity:0.35;">•</span>
+                        <span class="meta-key">Opt Level:</span>
+                        {% set hotness_colors = {
+                            'cold': ('#dbeafe', '#2563eb'),
+                            'warm': ('#fef9c3', '#ca8a04'),
+                            'hot': ('#fed7aa', '#ea580c'),
+                            'very-hot': ('#fecaca', '#dc2626'),
+                            'scorching': ('#fecdd3', '#be123c')
+                        } %}
+                        {% set hc = hotness_colors.get(opt_level, ('#f1f5f9', '#475569')) %}
+                        <span class="meta-val" style="background:{{ hc[0] }};color:{{ hc[1] }};padding:2px 8px;border-radius:999px;font-size:0.8rem;">{{ opt_level }}</span>
+                        {% endif %}
                         <span style="opacity:0.35;">•</span>
                         <span class="meta-key">Pass:</span>
                         <span class="meta-val">{{ passname if passname else 'N/A' }}</span>
@@ -176,7 +189,7 @@
                                         <div style="min-width:36px;height:36px;border-radius:50%;background:#10b981;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;">2</div>
                                         <div>
                                             <div style="font-weight:700;margin-bottom:4px;">Generate logs</div>
-                                            <div style="color:#6b7280">Click <strong>Upload and Generate</strong> to run the extractor; generated logs will appear in the list on the left.</div>
+                                            <div style="color:#6b7280">Click on <strong>Generate</strong> to run the extractor; generated logs will appear in the list on the left.</div>
                                         </div>
                                     </li>
                                     <li style="display:flex;gap:12px;align-items:flex-start;">
@@ -193,6 +206,10 @@
 
                     <div style="width:100%;display:flex;justify-content:center;margin-top:18px;">
                         <div class="card" style="max-width:720px;width:100%;padding:16px;">
+                            <!-- Green flash for successful generation -->
+                            <div id="generated-flash" style="display:none;margin-bottom:12px;padding:10px 14px;border-radius:8px;background:#dcfce7;color:#166534;font-weight:600;font-size:14px;border:1px solid #bbf7d0;text-align:center;transition:opacity 0.5s;">
+                                Generated successfully! Select a pass from the sidebar to view.
+                            </div>
                             <h3 style="margin-top:0;margin-bottom:6px;text-align:left;">Get the CFG and Tree IL for a method from JIT dump</h3>
                             <p style="color:#6b7280;margin:0 0 12px;font-size:13px;text-align:left;">Upload a JIT dump and specify the full method name (example: <code>Main.foo()V</code>).</p>
 
@@ -202,27 +219,31 @@
                                 </form>
                             </div>
 
-                            <form action="{{ url_for('log_viewer.upload_dump') }}" method="post" enctype="multipart/form-data">
+                            <form id="generate-form" action="{{ url_for('log_viewer.upload_dump') }}" method="post" enctype="multipart/form-data">
                                 <div style="display:flex;flex-direction:column;gap:12px;align-items:stretch;">
                                     <div style="display:flex;gap:12px;align-items:center;">
                                         <label style="min-width:140px;">1. Choose dump file:</label>
                                         <label for="dumpfile" id="dumpfile-label" style="background:#2563eb;color:#fff;padding:4px 8px;border-radius:8px;cursor:pointer;display:inline-block;">Select file</label>
-                                        <input type="file" id="dumpfile" name="dumpfile" accept="*/*" required style="display:none;">
-                                        <span id="selected-file-name" style="margin-left:8px;color:#374151;font-size:13px;"></span>
+                                        <input type="file" id="dumpfile" name="dumpfile" accept="*/*" style="display:none;">
+                                        <span id="selected-file-name" style="margin-left:8px;color:#374151;font-size:13px;">{% if uploaded_file %}{{ uploaded_file }}{% endif %}</span>
                                     </div>
-                                    <div style="display:flex;gap:12px;align-items:center;">
+                                    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
                                         <label style="min-width:120px;">2. Found methods:</label>
                                         <select id="method-select" style="min-width:260px;padding:8px;border-radius:6px;border:1px solid rgba(0,0,0,0.08);background:white;color:inherit">
                                             <option value="">-- select the method --</option>
                                         </select>
                                         <span id="method-count" style="font-size:12px;color:#475569;min-width:150px;">Detected: 0 methods</span>
                                     </div>
+                                    <div id="scan-status-row" style="display:none;padding:2px 0 2px 152px;">
+                                        <span id="scan-status" style="font-size:11px;color:#64748b;display:inline-flex;align-items:center;gap:6px;"></span>
+                                    </div>
                                         <div style="display:flex;gap:12px;align-items:center;">
                                         <label for="method" style="min-width:140px;">3. Selected method:</label>
                                         <input type="text" id="method" name="method" placeholder="Main.foo()V" required style="min-width:260px;padding:8px;border-radius:6px;border:1px solid rgba(0,0,0,0.08)">
+                                        <input type="hidden" id="hotness" name="hotness" value="">
                                     </div>
                                     <div style="margin-top:6px;text-align:left;">
-                                        <button type="submit" style="background:#2563eb;color:#fff;padding:10px 14px;border-radius:8px;border:none;cursor:pointer">Upload and Generate</button>
+                                        <button id="upload-btn" type="submit" style="background:#2563eb;color:#fff;padding:10px 14px;border-radius:8px;border:none;cursor:pointer">Generate</button>
                                     </div>
                                 </div>
                             </form>
@@ -234,101 +255,142 @@
     </div>
     <script src="{{ url_for('log_viewer.static', filename='script.js') }}"></script>
     <script>
-        // Update displayed filename when a file is selected
-        (function(){
-            document.addEventListener('DOMContentLoaded', function(){
-                var input = document.getElementById('dumpfile');
-                var out = document.getElementById('selected-file-name');
-                if(!input || !out) return;
-                input.addEventListener('change', function(){
-                    if(input.files && input.files.length){
-                        out.textContent = input.files[0].name;
-                    } else {
-                        out.textContent = '';
-                    }
+    // File upload and method scanning via server-side AJAX
+    (function(){
+        document.addEventListener('DOMContentLoaded', function(){
+            var input = document.getElementById('dumpfile');
+            var select = document.getElementById('method-select');
+            var methodInput = document.getElementById('method');
+            var hotnessInput = document.getElementById('hotness');
+            var methodCount = document.getElementById('method-count');
+            var scanStatusRow = document.getElementById('scan-status-row');
+            var scanStatus = document.getElementById('scan-status');
+            var fileNameSpan = document.getElementById('selected-file-name');
+            if(!select) return;
+
+            // Add spinner keyframes once
+            if(!document.getElementById('spin-style')){
+                var s = document.createElement('style');
+                s.id = 'spin-style';
+                s.textContent = '@keyframes spin{to{transform:rotate(360deg)}}';
+                document.head.appendChild(s);
+            }
+
+            var spinner = '<span style="display:inline-block;width:10px;height:10px;border:2px solid #0369a1;border-top-color:transparent;border-radius:50%;animation:spin .5s linear infinite;"></span>';
+            var check = '<span style="color:#16a34a;font-weight:700;">&#10003;</span>';
+
+            function setStatus(html){
+                if(!scanStatus || !scanStatusRow) return;
+                scanStatusRow.style.display = html ? 'block' : 'none';
+                scanStatus.innerHTML = html;
+            }
+
+            function formatSize(bytes){
+                if(bytes >= 1073741824) return (bytes/1073741824).toFixed(1) + ' GB';
+                if(bytes >= 1048576) return (bytes/1048576).toFixed(1) + ' MB';
+                if(bytes >= 1024) return (bytes/1024).toFixed(0) + ' KB';
+                return bytes + ' B';
+            }
+
+            function progressBar(pct){
+                return '<span style="display:inline-flex;align-items:center;gap:4px;">' +
+                    '<span style="display:inline-block;width:80px;height:8px;background:#e2e8f0;border-radius:4px;overflow:hidden;">' +
+                    '<span style="display:block;width:' + pct + '%;height:100%;background:#2563eb;border-radius:4px;transition:width 0.15s;"></span>' +
+                    '</span>' +
+                    '<span style="font-size:10px;color:#0369a1;min-width:28px;">' + pct + '%</span></span>';
+            }
+
+            function populateMethods(methods){
+                select.innerHTML = '<option value="">-- choose detected method --</option>';
+                methods.forEach(function(item){
+                    var opt = document.createElement('option');
+                    opt.value = item.method;
+                    opt.textContent = item.display;
+                    opt.setAttribute('data-hotness', item.hotness);
+                    select.appendChild(opt);
                 });
-            });
-        })();
-    </script>
-    <script>
-        // Extract method names from the uploaded dump and populate the select dropdown
-        (function(){
-            document.addEventListener('DOMContentLoaded', function(){
-                var input = document.getElementById('dumpfile');
-                var select = document.getElementById('method-select');
-                var methodInput = document.getElementById('method');
-                var methodCount = document.getElementById('method-count');
-                if(!input || !select) return;
-
-                function extractMethods(text){
-                    var methods = new Set();
-                    var m;
-
-                    function addMethod(raw){
-                        if(!raw) return;
-                        var name = String(raw).trim();
-                        if(!name) return;
-                        // Normalize known wrappers/punctuation around captured names.
-                        name = name.replace(/^[=\-:\s>]+/, '').replace(/[\s"'>,]+$/, '');
-                        if(name.indexOf('(') === -1 || name.indexOf(')') === -1) return;
-                        methods.add(name);
-                    }
-
-                    // Pattern 1: <compile ... name="..."> (some dumps keep full signatures in name).
-                    var re1 = /<compile\b[^>]*\bname=["']([^"']+)["'][^>]*>/gi;
-                    while((m = re1.exec(text)) !== null){ addMethod(m[1]); }
-
-                    // Pattern 2: <compile ... method="...">.
-                    var re2 = /<compile\b[^>]*\bmethod=["']([^"']+)["'][^>]*>/gi;
-                    while((m = re2.exec(text)) !== null){ addMethod(m[1]); }
-
-                    // Pattern 3: generic method attributes across the dump.
-                    var re3 = /\bmethod=["']([^"']+)["']/gi;
-                    while((m = re3.exec(text)) !== null){ addMethod(m[1]); }
-
-                    // Pattern 4: OpenJ9 method boundary markers (=======>full/signature).
-                    var re4 = /^=+>\s*([^\r\n]+)/gm;
-                    while((m = re4.exec(text)) !== null){ addMethod(m[1]); }
-
-                    // Pattern 5: fallback for dotted signatures with any return descriptor.
-                    var re5 = /[A-Za-z0-9_\/$]+\.[A-Za-z0-9_$<>]+\([^\)]*\)(?:[BCDFIJSVZ]|L[^;\s]+;|\[[^\s<>"]+)/g;
-                    while((m = re5.exec(text)) !== null){ addMethod(m[0]); }
-
-                    return Array.from(methods).sort(function(a,b){ return a.localeCompare(b); });
+                if(methodCount){
+                    methodCount.textContent = 'Detected: ' + methods.length + ' method' + (methods.length === 1 ? '' : 's');
                 }
+            }
 
+            // On file select: upload to server via XHR, server scans and returns methods
+            if(input){
                 input.addEventListener('change', function(){
                     var file = input.files && input.files[0];
                     if(!file) return;
-                    if(methodCount){ methodCount.textContent = 'Detected: scanning...'; }
-                    var reader = new FileReader();
-                    reader.onload = function(e){
-                        try{
-                            var txt = e.target.result || '';
-                            var methods = extractMethods(txt);
-                            // clear select
-                            select.innerHTML = '<option value="">-- choose detected method --</option>';
-                            methods.forEach(function(name){
-                                var opt = document.createElement('option');
-                                opt.value = name; opt.textContent = name;
-                                select.appendChild(opt);
-                            });
-                            if(methodCount){
-                                methodCount.textContent = 'Detected: ' + methods.length + ' method' + (methods.length === 1 ? '' : 's');
-                            }
-                        }catch(err){
-                            console.error('Failed to parse file for methods', err);
-                            if(methodCount){ methodCount.textContent = 'Detected: parse failed'; }
+
+                    if(fileNameSpan) fileNameSpan.textContent = file.name;
+                    if(methodCount) methodCount.textContent = '';
+                    select.innerHTML = '<option value="">-- uploading... --</option>';
+
+                    var formData = new FormData();
+                    formData.append('dumpfile', file);
+
+                    var xhr = new XMLHttpRequest();
+                    xhr.open('POST', '{{ url_for("log_viewer.upload_file_only") }}');
+
+                    // Upload progress (sending file to server)
+                    xhr.upload.onprogress = function(ev){
+                        if(ev.lengthComputable){
+                            var pct = Math.min(99, Math.round(ev.loaded / ev.total * 100));
+                            setStatus(spinner + ' <span style="color:#0369a1;">Uploading (' + formatSize(ev.loaded) + '/' + formatSize(ev.total) + ')</span> ' + progressBar(pct));
                         }
                     };
-                    reader.readAsText(file);
-                });
 
-                select.addEventListener('change', function(){
-                    if(this.value){ methodInput.value = this.value; }
+                    xhr.upload.onload = function(){
+                        setStatus(check + ' Uploaded &nbsp;' + spinner + ' <span style="color:#0369a1;">Server is copying & scanning for methods...</span>');
+                    };
+
+                    xhr.onload = function(){
+                        if(xhr.status === 200){
+                            try{
+                                var data = JSON.parse(xhr.responseText);
+                                populateMethods(data.methods || []);
+                                setStatus(check + ' Uploaded &nbsp;' + check + ' Scanned &nbsp;' + check + ' <span style="color:#15803d;font-weight:600;">Done</span>');
+                            }catch(err){
+                                setStatus('<span style="color:#dc2626;">Failed to parse server response</span>');
+                            }
+                        } else {
+                            setStatus('<span style="color:#dc2626;">Upload failed (HTTP ' + xhr.status + ')</span>');
+                        }
+                    };
+
+                    xhr.onerror = function(){
+                        setStatus('<span style="color:#dc2626;">Upload failed (network error)</span>');
+                    };
+
+                    setStatus(spinner + ' <span style="color:#0369a1;">Uploading (' + formatSize(file.size) + ')...</span> ' + progressBar(0));
+                    xhr.send(formData);
                 });
+            }
+
+            // On page load: if a file was previously uploaded, fetch methods from server
+            var existingFile = (fileNameSpan && fileNameSpan.textContent.trim()) || '';
+            if(existingFile){
+                setStatus(spinner + ' <span style="color:#0369a1;">Loading methods for ' + existingFile + '...</span>');
+                fetch('{{ url_for("log_viewer.scan_methods") }}')
+                    .then(function(r){ return r.json(); })
+                    .then(function(data){
+                        if(data.methods && data.methods.length){
+                            populateMethods(data.methods);
+                            setStatus(check + ' <span style="color:#15803d;">Loaded ' + data.methods.length + ' methods</span>');
+                        } else {
+                            setStatus('<span style="color:#94a3b8;">No methods found</span>');
+                        }
+                    })
+                    .catch(function(){
+                        setStatus('<span style="color:#94a3b8;">Could not load methods</span>');
+                    });
+            }
+
+            select.addEventListener('change', function(){
+                if(this.value && methodInput){ methodInput.value = this.value; }
+                var sel = this.options[this.selectedIndex];
+                if(hotnessInput){ hotnessInput.value = sel ? (sel.getAttribute('data-hotness') || '') : ''; }
             });
-        })();
+        });
+    })();
     </script>
     <script>
         // Sidebar search filter for available logs
@@ -502,6 +564,27 @@
                 document.body.style.userSelect = '';
             });
         });
+    })();
+    </script>
+    <script>
+    // Show green flash when redirected after successful generation
+    (function(){
+        var params = new URLSearchParams(window.location.search);
+        if(params.get('generated') === '1'){
+            var flash = document.getElementById('generated-flash');
+            if(flash){
+                flash.style.display = 'block';
+                // Remove ?generated=1 from URL without reload
+                var url = new URL(window.location);
+                url.searchParams.delete('generated');
+                history.replaceState(null, '', url.pathname + url.search);
+                // Fade out after 4 seconds
+                setTimeout(function(){
+                    flash.style.opacity = '0';
+                    setTimeout(function(){ flash.style.display = 'none'; }, 500);
+                }, 4000);
+            }
+        }
     })();
     </script>
 </body>

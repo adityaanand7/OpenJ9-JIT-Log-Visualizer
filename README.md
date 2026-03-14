@@ -101,7 +101,7 @@ The server starts at `http://localhost:5000` in debug mode.
 1. Open `http://localhost:5000` in your browser.
 2. Click **Select file** and choose a raw OpenJ9 JIT trace dump file.
 3. Select or type the full method signature (e.g., `Main.foo()V`) from the detected methods dropdown.
-4. Click **Upload and Generate** — the extractor runs and populates the sidebar with all optimization passes.
+4. Click **Generate** — the extractor runs and populates the sidebar with all optimization passes.
 5. Click any pass in the sidebar to view its CFG and Tree IL side by side.
 
 Note: To generate log files use `-Xjit:traceFull,log=<log_name>` in your command line argument. 
