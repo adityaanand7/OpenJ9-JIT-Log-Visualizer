@@ -108,6 +108,8 @@ body, html {
     flex-grow: 1;
     padding: 5px;
     overflow: hidden; /* Prevent content from pushing layout */
+    min-width: 0;
+    min-height: 0;
 }
 
 /* Resizable CFG + Tree IL layout. */
@@ -115,16 +117,21 @@ body, html {
     display: flex;
     gap: 0;
     height: calc(100vh - 80px);
+    min-height: 0; /* Added bounded flex sizing */
 }
 
 .viewer-grid .panel:first-child {
     flex: 0 0 40%;
     min-width: 200px;
+    min-height: 0;
+    height: 100%;
 }
 
 .viewer-grid .panel:last-child {
     flex: 1 1 auto;
     min-width: 200px;
+    min-height: 0; /* Added bounded flex sizing */
+    height: 100%; /* Added bounded flex sizing */
 }
 
 /* Drag handle between panels. */
@@ -151,6 +158,7 @@ body, html {
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    min-height: 0;
 }
 
 .panel h3 {
@@ -164,8 +172,11 @@ body, html {
 
 .svg-container, .code-container {
     padding: 6px; /* tighter content padding to maximize space */
-    overflow: auto; /* IMPORTANT for scrolling */
-    flex-grow: 1;
+    min-width: 0;
+    min-height: 0;
+    flex: 1 1 0;
+    overflow-y: auto;
+    overflow-x: auto;
 }
 
 /* Subtle grid helps users track edges in dense graphs. */
@@ -178,6 +189,204 @@ body, html {
 
 .code-container pre {
     margin: 0;
+}
+
+.ast-reset-btn {
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 6px 10px;
+    background: #ffffff;
+    color: #334155;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.pretty-ast-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-right: 8px;
+    color: #475569;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.pretty-ast-toggle input {
+    accent-color: #2563eb;
+    cursor: pointer;
+}
+
+.ast-view {
+    --ast-ink: #1e293b;
+    --ast-muted: #64748b;
+    --ast-line: #cbd5e1;
+    padding: 14px 16px 24px;
+    min-width: 0;
+    min-height: 0;
+    height: 0;
+    flex: 1 1 0;
+    overflow-y: auto;
+    overflow-x: auto;
+    background: linear-gradient(135deg, #f8fafc 0%, #eef6ff 100%);
+}
+
+.ast-view.ast-active {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    max-height: calc(100vh - 130px);
+    min-height: 0;
+    flex: 1 1 auto;
+    overflow: hidden;
+}
+
+.ast-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+    color: var(--ast-ink);
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.ast-heading small {
+    color: var(--ast-muted);
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.ast-tree, .ast-children {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.ast-tree {
+    min-height: 0;
+    flex: 1 1 auto;
+    overflow-y: auto;
+    overflow-x: auto;
+    padding-bottom: 24px;
+}
+
+.ast-children {
+    margin-left: 0;
+    padding-left: 0;
+}
+
+.ast-node {
+    position: relative;
+    margin: 6px 0;
+}
+
+.ast-node::before {
+    content: '';
+    position: absolute;
+    top: 20px;
+    left: var(--ast-branch-offset, -17px);
+    width: 16px;
+    border-top: 1px solid var(--ast-line);
+}
+
+.ast-tree > .ast-node::before { display: none; }
+
+.ast-node-card {
+    position: relative;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    min-width: max-content;
+    padding: 8px 10px;
+    border: 1px solid #dbe5f0;
+    border-left: 4px solid #38bdf8;
+    border-radius: 7px;
+    background: #ffffff;
+    box-shadow: 0 2px 7px rgba(30, 64, 175, 0.07);
+    color: var(--ast-ink);
+}
+
+.ast-node[data-kind="boundary"] .ast-node-card {
+    border-left-color: #f59e0b;
+    background: #fffbeb;
+}
+
+.ast-node[data-kind="reference"] .ast-node-card {
+    border-left-color: #a78bfa;
+    background: #faf5ff;
+}
+
+.ast-node-id {
+    color: #94a3b8;
+    font-family: 'Source Code Pro', monospace;
+    font-size: 11px;
+}
+
+.ast-operation {
+    color: #0369a1;
+    font-family: 'Source Code Pro', monospace;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.ast-node[data-kind="boundary"] .ast-operation { color: #b45309; }
+.ast-node[data-kind="reference"] .ast-operation { color: #7c3aed; }
+
+.ast-details {
+    color: var(--ast-muted);
+    font-family: 'Source Code Pro', monospace;
+    font-size: 11px;
+    white-space: pre;
+}
+
+.ast-tooltip {
+    position: absolute;
+    z-index: 10;
+    left: 14px;
+    bottom: calc(100% + 7px);
+    max-width: min(620px, calc(100vw - 80px));
+    padding: 7px 9px;
+    border: 1px solid #334155;
+    border-radius: 5px;
+    background: #0f172a;
+    color: #e2e8f0;
+    box-shadow: 0 7px 18px rgba(15, 23, 42, 0.22);
+    font-family: 'Source Code Pro', monospace;
+    font-size: 11px;
+    line-height: 1.45;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(3px);
+    transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.ast-tooltip::after {
+    content: '';
+    position: absolute;
+    left: 14px;
+    top: 100%;
+    border: 5px solid transparent;
+    border-top-color: #334155;
+}
+
+.ast-node-card.has-metadata:hover .ast-tooltip,
+.ast-node-card.has-metadata:focus-within .ast-tooltip {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.ast-footer {
+    margin: 8px 0 0 14px;
+    color: #94a3b8;
+    font-family: 'Source Code Pro', monospace;
+    font-size: 11px;
+    font-style: italic;
 }
 
 .code-block.highlight {

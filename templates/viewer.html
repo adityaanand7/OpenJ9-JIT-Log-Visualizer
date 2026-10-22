@@ -144,6 +144,11 @@
                         <h3 style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
                             <span>Tree IL</span>
                             <div class="highlight-dropdown" style="position:relative;display:inline-block;">
+                                <label class="pretty-ast-toggle" title="Show selected Tree IL as a nested AST">
+                                    <input id="pretty-ast-toggle" type="checkbox">
+                                    Pretty AST
+                                </label>
+                                <button id="ast-reset-btn" type="button" class="ast-reset-btn" hidden>Show raw Tree IL</button>
                                 <button id="highlight-toggle-btn" type="button" style="background:#475569;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;">Highlight the selected &#9662;</button>
                                 <div id="highlight-menu" style="display:none;position:absolute;right:0;top:100%;margin-top:4px;background:#fff;border:1px solid #ddd;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.12);padding:8px 12px;z-index:100;min-width:220px;">
                                     <label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;font-size:13px;color:#1e293b;">
@@ -156,10 +161,11 @@
                                         <span style="width:12px;height:12px;border-radius:3px;background:#dbeafe;border:1px solid #3b82f6;display:inline-block;"></span>
                                         Heapification Checks
                                     </label>
-                                    <label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;font-size:13px;color:#1e293b;">
-                                        <input type="checkbox" class="highlight-opt" data-pattern="awrtbari" data-color="#fef9c3" data-border="#ca8a04" value="write-barrier">
-                                        <span style="width:12px;height:12px;border-radius:3px;background:#fef9c3;border:1px solid #ca8a04;display:inline-block;"></span>
-                                        Write Barrier
+                                    </label>
+                                        <label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;font-size:13px;color:#1e293b;">
+                                            <input type="checkbox" class="highlight-opt" data-pattern="awrtbari" data-color="#97dcb1" data-border="#ca8a04" value="write-barrier">
+                                            <span style="width:12px;height:12px;border-radius:3px;background:#97dcb1;border:1px solid #ca8a04;display:inline-block;"></span>
+                                            Write Barrier
                                     </label>
                                 </div>
                             </div>
@@ -167,6 +173,7 @@
                         <div class="code-container">
                             {{ trees_html | safe }}
                         </div>
+                        <div id="ast-view" class="ast-view" aria-live="polite" hidden></div>
                     </div>
                 </div>
             {% else %}
@@ -493,6 +500,7 @@
                     }
                     el.innerHTML = lines.join('\n');
                 });
+                if(window.updateAstHighlights){ window.updateAstHighlights(active); }
             }
         });
     })();
